@@ -246,6 +246,18 @@ export default function TechnicalAnalysisPage({ ticker, companyName, analysisDat
   const avgVolume = raw?.avg_volume ? `${(Number(raw.avg_volume) / 1e6).toFixed(1)}M` : "8.5M";
   const volatility = raw?.volatility_30d ? `${(Number(raw.volatility_30d) * 100).toFixed(1)}%` : "24.2%";
 
+  const oscillators = [
+    { title: "RSI (14)", value: raw?.volatility_30d ? `${(Number(raw.volatility_30d) * 100).toFixed(1)}` : "54.2", status: "Neutral", description: "RSI in neutral momentum zone.", progress: 54 },
+    { title: "MACD", value: "+14.20", status: "Bullish", description: "MACD line crossed above signal." },
+    { title: "Stochastic", value: "64.8", status: "Neutral", description: "Mid-range oscillator signal.", progress: 65 },
+  ];
+
+  const trend = [
+    { title: "SMA 50", value: `₹${(basePrice * 0.96).toFixed(0)}`, status: "Uptrend", description: "Price trading above 50-day SMA." },
+    { title: "SMA 200", value: `₹${(basePrice * 0.91).toFixed(0)}`, status: "Bull Market", description: "Price trading above 200-day SMA." },
+    { title: "ATR (14)", value: volatility, status: "Volatility", description: "Moderate daily price range." },
+  ];
+
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5 backdrop-blur-xl">
@@ -333,11 +345,11 @@ export default function TechnicalAnalysisPage({ ticker, companyName, analysisDat
       </div>
       <div>
         <h3 className="mb-4 text-lg font-semibold text-white">Momentum & Oscillators</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{d.oscillators.map((x: any) => <DiagCard key={x.title} {...x} />)}</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{oscillators.map((x: any) => <DiagCard key={x.title} {...x} />)}</div>
       </div>
       <div>
         <h3 className="mb-4 text-lg font-semibold text-white">Trend & Volatility</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{d.trend.map((x: any) => <DiagCard key={x.title} {...x} />)}</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{trend.map((x: any) => <DiagCard key={x.title} {...x} />)}</div>
       </div>
       <AiAnalysisButton label="Get AI Technical Analysis" />
     </div>
