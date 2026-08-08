@@ -44,7 +44,7 @@ export default function LoginForm({
             if (err instanceof ApiError) {
                 setError(err.message || "Invalid email or password.");
             } else {
-                setError("Something went wrong. Please try again.");
+                setError("Could not connect to server. Please ensure the backend is running on http://localhost:9056.");
             }
             setLoading(false);
         }
