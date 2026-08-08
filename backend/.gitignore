@@ -1,0 +1,25 @@
+# Local environment (never commit secrets)
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Tooling
+.idea/
+.vscode/
+.DS_Store
+
+# Test / runtime artifacts
+logs/
+*.log
