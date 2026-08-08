@@ -5,6 +5,8 @@ import { Loader2 } from "lucide-react";
 import AuthInput from "./AuthInput";
 import Divider from "./Divider";
 import GoogleButton from "./GoogleButton";
+import { useAuthStore } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
 
 interface Props {
     switchToLogin: () => void;
@@ -16,13 +18,11 @@ export default function RegisterForm({
     onSuccess,
 }: Props) {
     const [fullName, setFullName] = useState("");
-    const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errors, setErrors] = useState<{
         fullName?: string;
-        username?: string;
         email?: string;
         password?: string;
         confirmPassword?: string;
@@ -33,6 +33,8 @@ export default function RegisterForm({
     // Password visibility toggles
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const register = useAuthStore((s) => s.register);
 
     // Password strength calculation
     const getPasswordStrength = (pass: string) => {
@@ -68,14 +70,6 @@ export default function RegisterForm({
             newErrors.fullName = "Name must be at least 2 characters";
         }
 
-        if (!username.trim()) {
-            newErrors.username = "Username is required";
-        } else if (username.length < 3) {
-            newErrors.username = "Username must be at least 3 characters";
-        } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            newErrors.username = "Username can only contain letters, numbers, and underscores";
-        }
-
         if (!email.trim()) {
             newErrors.email = "Email is required";
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -84,8 +78,10 @@ export default function RegisterForm({
 
         if (!password) {
             newErrors.password = "Password is required";
-        } else if (password.length < 6) {
-            newErrors.password = "Password must be at least 6 characters";
+        } else if (password.length < 8) {
+            newErrors.password = "Password must be at least 8 characters";
+        } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+            newErrors.password = "Password must contain at least one letter and one digit";
         }
 
         if (!confirmPassword) {
@@ -107,11 +103,30 @@ export default function RegisterForm({
         setIsLoading(true);
 
         try {
-            // Simulate API call delay
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await register(email.trim(), password, fullName.trim());
             onSuccess();
-        } catch {
-            setErrors({ form: "Failed to create account. Please try again." });
+        } catch (err) {
+            if (err instanceof ApiError) {
+                // Map backend validation errors to form fields
+                if (err.code === "VALIDATION_ERROR" && err.details && typeof err.details === "object") {
+                    const fieldErrors: typeof errors = {};
+                    const details = err.details as Record<string, string[]>;
+                    if (details.email) fieldErrors.email = details.email[0];
+                    if (details.password) fieldErrors.password = details.password[0];
+                    if (details.full_name) fieldErrors.fullName = details.full_name[0];
+                    if (Object.keys(fieldErrors).length > 0) {
+                        setErrors(fieldErrors);
+                    } else {
+                        setErrors({ form: err.message });
+                    }
+                } else if (err.code === "CONFLICT") {
+                    setErrors({ email: "An account with this email already exists" });
+                } else {
+                    setErrors({ form: err.message || "Registration failed. Please try again." });
+                }
+            } else {
+                setErrors({ form: "Something went wrong. Please try again." });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -143,17 +158,6 @@ export default function RegisterForm({
                     if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
                 }}
                 error={errors.fullName}
-            />
-
-            <AuthInput
-                label="Username"
-                placeholder="johndoe"
-                value={username}
-                onChange={(e) => {
-                    setUsername(e.target.value);
-                    if (errors.username) setErrors((prev) => ({ ...prev, username: undefined }));
-                }}
-                error={errors.username}
             />
 
             <AuthInput

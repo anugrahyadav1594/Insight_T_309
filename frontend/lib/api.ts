@@ -147,3 +147,7 @@ export const apiClient = {
     return request<T>("DELETE", path, undefined, options);
   },
 };
+
+// ─── Service Module Re-exports ───────────────────────────────────────────────
+export * from "./api/index";
+

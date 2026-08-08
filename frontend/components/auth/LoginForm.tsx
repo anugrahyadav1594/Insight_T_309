@@ -4,18 +4,13 @@ import { useState } from "react";
 import AuthInput from "./AuthInput";
 import Divider from "./Divider";
 import GoogleButton from "./GoogleButton";
+import { useAuthStore } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
 
 interface Props {
     switchToRegister: () => void;
     onSuccess: () => void;
 }
-
-const REGISTERED_USERS = [
-    {
-        email: "demo@insight.ai",
-        password: "Insight123",
-    },
-];
 
 export default function LoginForm({
     switchToRegister,
@@ -30,6 +25,8 @@ export default function LoginForm({
     // Password visibility toggle state
     const [showPassword, setShowPassword] = useState(false);
 
+    const login = useAuthStore((s) => s.login);
+
     async function handleLogin() {
         setError("");
 
@@ -40,22 +37,17 @@ export default function LoginForm({
 
         setLoading(true);
 
-        // Fake network delay
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
-        const foundUser = REGISTERED_USERS.find(
-            (u) =>
-                u.email.toLowerCase() === email.trim().toLowerCase() &&
-                u.password === password
-        );
-
-        if (foundUser) {
+        try {
+            await login(email.trim(), password);
             onSuccess();
-            return;
+        } catch (err) {
+            if (err instanceof ApiError) {
+                setError(err.message || "Invalid email or password.");
+            } else {
+                setError("Something went wrong. Please try again.");
+            }
+            setLoading(false);
         }
-
-        setLoading(false);
-        setError("Invalid email or password.");
     }
 
     return (
