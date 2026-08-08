@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import WatchlistHeader from "./watchlist/WatchlistHeader";
 import WatchlistStats from "./watchlist/WatchlistStats";
 import WatchlistSearch from "./watchlist/WatchlistSearch";
 import WatchlistTable from "./watchlist/WatchlistTable";
 import WatchlistEmpty from "./watchlist/WatchlistEmpty";
-import { watchlist as initialWatchlist, getWatchlistStats, type AISignal } from "@/lib/watchlistData";
+import { watchlist as initialWatchlist, getWatchlistStats, type WatchlistStock, type AISignal } from "@/lib/watchlistData";
+import { listWatchlists, getWatchlist, addWatchlistItem } from "@/lib/api";
+import type { EnrichedItem } from "@/lib/types";
 
 interface WatchlistProps {
   onBack?: () => void;
@@ -14,22 +17,88 @@ interface WatchlistProps {
 }
 
 export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
-  const [stocks, setStocks] = useState(initialWatchlist);
+  const [stocks, setStocks] = useState<WatchlistStock[]>(initialWatchlist);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<AISignal | "All">("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(null);
 
-  const handleAddStock = () => {
-    // For now, this is a mock action that adds a random stock if not already present
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    (async () => {
+      try {
+        const list = await listWatchlists();
+        if (cancelled) return;
+
+        if (list.items.length === 0) {
+          setStocks(initialWatchlist);
+          setLoading(false);
+          return;
+        }
+
+        const watchlistId = list.items[0].id;
+        setActiveWatchlistId(watchlistId);
+        const detail = await getWatchlist(watchlistId);
+        if (cancelled) return;
+
+        const mappedStocks: WatchlistStock[] = detail.items.map((item: EnrichedItem) => {
+          let signal: AISignal = "Neutral";
+          if (item.signal) {
+            const upper = item.signal.toUpperCase();
+            if (upper.includes("BULL") || upper.includes("BUY")) signal = "Bullish";
+            else border: if (upper.includes("ACCUMULATE")) signal = "Accumulate";
+            else if (upper.includes("BEAR")) signal = "Bearish";
+          }
+
+          return {
+            symbol: item.company.ticker,
+            company: item.company.name,
+            price: item.price ?? 0,
+            change: item.day_change_pct ?? 0,
+            volume: "Normal",
+            aiSignal: signal,
+            aiScore: Math.round(item.score ?? 50),
+          };
+        });
+
+        setStocks(mappedStocks.length > 0 ? mappedStocks : initialWatchlist);
+        setError(null);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Failed to load watchlist";
+        setError(message);
+        setStocks(initialWatchlist);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleAddStock = async () => {
     const pool = [
       { symbol: "TATASTEEL", company: "Tata Steel Ltd", price: 125, change: 1.2, volume: "Normal" as const, aiSignal: "Bullish" as const, aiScore: 82 },
       { symbol: "INFY", company: "Infosys Ltd", price: 1680, change: 2.1, volume: "High" as const, aiSignal: "Bullish" as const, aiScore: 88 },
       { symbol: "RELIANCE", company: "Reliance Industries", price: 2510, change: 0.6, volume: "Normal" as const, aiSignal: "Accumulate" as const, aiScore: 84 },
     ];
     const next = pool.find((item) => !stocks.some((s) => s.symbol === item.symbol));
+    const tickerToAdd = next ? next.symbol : `MOCK${Math.floor(Math.random() * 1000)}`;
+
+    if (activeWatchlistId) {
+      try {
+        await addWatchlistItem(activeWatchlistId, tickerToAdd);
+      } catch {
+        // Fall back to local UI state addition if server fails or mock
+      }
+    }
+
     if (next) {
       setStocks((prev) => [next, ...prev]);
     } else {
-      // If all are present, just add a dummy stock
       const randomId = Math.floor(Math.random() * 1000);
       const customStock = {
         symbol: `MOCK${randomId}`,
@@ -58,6 +127,15 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
 
   const stats = getWatchlistStats(filteredStocks);
 
+  if (loading) {
+    return (
+      <div className="relative min-h-screen px-6 pt-24 pb-20 text-white flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+        <p className="text-sm text-slate-400">Loading watchlist...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen px-6 pt-24 pb-20 text-white">
       {/* Background Glows */}
@@ -67,6 +145,11 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
       </div>
 
       <div className="mx-auto max-w-7xl px-8">
+        {error && (
+          <div className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+            ⚠️ Using demo data — {error}
+          </div>
+        )}
         <WatchlistHeader onBack={onBack} onAddStock={handleAddStock} />
         
         {stocks.length > 0 ? (

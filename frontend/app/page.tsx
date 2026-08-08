@@ -10,9 +10,16 @@ import Faq from "@/components/landing/Faq";
 import Footer from "@/components/landing/Footer";
 import AuthOverlay from "@/components/auth/AuthOverlay";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { useAuthStore } from "@/lib/auth";
 
 export default function Home() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const {
+        isAuthenticated,
+        hydrate,
+        logout: authLogout,
+        fetchMe,
+    } = useAuthStore();
+
     const [currentView, setCurrentView] = useState<"landing" | "dashboard">(
         "landing"
     );
@@ -22,15 +29,14 @@ export default function Home() {
     const [hasVisitedDashboard, setHasVisitedDashboard] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
+    // Hydrate auth store from localStorage on mount
     useEffect(() => {
         setIsMounted(true);
-        const storedAuth = localStorage.getItem("insight_isAuthenticated");
+        hydrate();
+
         const storedView = localStorage.getItem("insight_currentView") as "landing" | "dashboard" | null;
         const storedVisited = localStorage.getItem("insight_hasVisitedDashboard");
 
-        if (storedAuth === "true") {
-            setIsAuthenticated(true);
-        }
         if (storedView) {
             setCurrentView(storedView);
             if (storedView === "dashboard") {
@@ -40,12 +46,16 @@ export default function Home() {
         if (storedVisited === "true") {
             setHasVisitedDashboard(true);
         }
-    }, []);
+    }, [hydrate]);
 
+    // After hydration, if authenticated, try to fetch user profile
     useEffect(() => {
-        if (!isMounted) return;
-        localStorage.setItem("insight_isAuthenticated", isAuthenticated.toString());
-    }, [isAuthenticated, isMounted]);
+        if (isMounted && isAuthenticated) {
+            fetchMe().catch(() => {
+                // If fetchMe fails (expired token), auth store will clear itself
+            });
+        }
+    }, [isMounted, isAuthenticated, fetchMe]);
 
     useEffect(() => {
         if (!isMounted) return;
@@ -61,9 +71,14 @@ export default function Home() {
     }, [hasVisitedDashboard, isMounted]);
 
     function handleLoginSuccess() {
-        setIsAuthenticated(true);
         setAuthMode("none");
         setCurrentView("dashboard");
+    }
+
+    function handleLogout() {
+        authLogout();
+        setCurrentView("landing");
+        setHasVisitedDashboard(false);
     }
 
     return (
@@ -95,11 +110,7 @@ export default function Home() {
                         onLogin={() => setAuthMode("login")}
                         onRegister={() => setAuthMode("register")}
                         onDashboard={() => setCurrentView("dashboard")}
-                        onLogout={() => {
-                            setIsAuthenticated(false);
-                            setCurrentView("landing");
-                            setHasVisitedDashboard(false);
-                        }}
+                        onLogout={handleLogout}
                         onLanding={() => setCurrentView("landing")}
                     />
 
@@ -133,12 +144,8 @@ export default function Home() {
                     isAuthenticated={isAuthenticated}
                     onLogin={() => setAuthMode("login")}
                     onRegister={() => setAuthMode("register")}
-                    onLogout={() => {
-                        setIsAuthenticated(false);
-                        setCurrentView("landing");
-                        setHasVisitedDashboard(false);
-                    }}
-                    onLanding={() => setCurrentView("landing")} // ✅ PASS HERE
+                    onLogout={handleLogout}
+                    onLanding={() => setCurrentView("landing")}
                 />
             )}
         </main>
