@@ -1,13 +1,16 @@
-"use client";
-
 import { useState, useMemo } from "react";
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Newspaper } from "lucide-react";
+import { Newspaper, Sparkles, Building2 } from "lucide-react";
 import { companyDataMap } from "@/lib/companyData";
+import type { CompanyAnalysisResponse } from "@/lib/types";
 
-interface Props { ticker: string; companyName: string }
+interface Props {
+  ticker: string;
+  companyName: string;
+  analysisData?: CompanyAnalysisResponse | null;
+}
 
 const TIME_RANGES = ["1D", "5D", "1M", "3M", "6M", "1Y", "2Y", "5Y", "Max"];
 
@@ -89,12 +92,14 @@ function ChartTooltip({ active, payload }: any) {
   );
 }
 
-export default function OverviewPage({ ticker, companyName }: Props) {
+export default function OverviewPage({ ticker, companyName, analysisData }: Props) {
   const [selectedRange, setSelectedRange] = useState("1Y");
   const companyInfo = companyDataMap[ticker] || companyDataMap["RELIANCE"];
-  const basePrice = companyInfo?.price || 1334.80;
-  const changePct = companyInfo?.change || 0.74;
-  const changeVal = (basePrice * changePct) / 100;
+  const rawData = analysisData?.raw_data;
+
+  const basePrice = rawData?.price ? Number(rawData.price) : (companyInfo?.price || 1334.80);
+  const changePct = rawData?.day_change_pct ? Number(rawData.day_change_pct) : (companyInfo?.change || 0.74);
+  const changeVal = rawData?.day_change ? Number(rawData.day_change) : (basePrice * changePct) / 100;
   const isPositive = changePct >= 0;
 
   const prices = useMemo(() => getPrices(basePrice), [basePrice]);

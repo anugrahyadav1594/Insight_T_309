@@ -7,7 +7,13 @@ import TradingSignal from "./shared/TradingSignal";
 import StatusBadge from "./shared/StatusBadge";
 import AiAnalysisButton from "./shared/AiAnalysisButton";
 
-interface Props { ticker: string; companyName: string }
+import type { CompanyAnalysisResponse } from "@/lib/types";
+
+interface Props {
+  ticker: string;
+  companyName: string;
+  analysisData?: CompanyAnalysisResponse | null;
+}
 
 const INDICATORS = [
   { id: "volume", label: "Volume", on: true },
@@ -215,12 +221,25 @@ function ChartTooltip({ active, payload }: any) {
   );
 }
 
-export default function TechnicalAnalysisPage({ ticker }: Props) {
+export default function TechnicalAnalysisPage({ ticker, companyName, analysisData }: Props) {
   const [active, setActive] = useState<Record<string, boolean>>(Object.fromEntries(INDICATORS.map(i => [i.id, i.on])));
   const [chartType, setChartType] = useState<"candlestick" | "line">("candlestick");
+
+  const raw = analysisData?.raw_data;
+  const techScores = (analysisData?.scores as any)?.technical;
   const d = tData[ticker] || tData.RELIANCE;
-  const basePrice = d.keyLevels?.high52w ? d.keyLevels.high52w * 0.8 : 2800;
+
+  const basePrice = raw?.price ? Number(raw.price) : (d.keyLevels?.high52w ? d.keyLevels.high52w * 0.8 : 2800);
   const prices = useMemo(() => getPrices(basePrice), [basePrice]);
+
+  const signal = techScores?.signal || d.signal;
+  const confidence = techScores?.confidence != null ? Math.round(Number(techScores.confidence) * 100) : d.confidence;
+  const explanation = techScores?.reasons || d.explanation;
+
+  const high52w = raw?.high_52w ? Number(raw.high_52w) : d.keyLevels.high52w;
+  const low52w = raw?.low_52w ? Number(raw.low_52w) : d.keyLevels.low52w;
+  const avgVolume = raw?.avg_volume ? `${(Number(raw.avg_volume) / 1e6).toFixed(1)}M` : d.keyLevels.avgVolume;
+  const volatility = raw?.volatility_30d ? `${(Number(raw.volatility_30d) * 100).toFixed(1)}%` : d.keyLevels.volatility;
 
   return (
     <div className="space-y-8">
@@ -297,14 +316,14 @@ export default function TechnicalAnalysisPage({ ticker }: Props) {
           </ResponsiveContainer>
         </div>
       </div>
-      <TradingSignal signal={d.signal} confidence={d.confidence} explanation={d.explanation} />
+      <TradingSignal signal={signal} confidence={confidence} explanation={explanation} />
       <div>
         <h3 className="mb-4 text-lg font-semibold text-white">Key Levels</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard title="52W High" value={`₹${d.keyLevels.high52w.toLocaleString("en-IN")}`} />
-          <MetricCard title="52W Low" value={`₹${d.keyLevels.low52w.toLocaleString("en-IN")}`} />
-          <MetricCard title="Avg Volume" value={d.keyLevels.avgVolume} />
-          <MetricCard title="Volatility" value={d.keyLevels.volatility} accent="warning" />
+          <MetricCard title="52W High" value={`₹${high52w?.toLocaleString("en-IN")}`} />
+          <MetricCard title="52W Low" value={`₹${low52w?.toLocaleString("en-IN")}`} />
+          <MetricCard title="Avg Volume" value={avgVolume} />
+          <MetricCard title="Volatility" value={volatility} accent="warning" />
         </div>
       </div>
       <div>

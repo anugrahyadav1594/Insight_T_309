@@ -72,10 +72,10 @@ export default function CompanyAnalysis({
 
   const renderActivePage = () => {
     switch (activeTab) {
-      case "overview": return <OverviewPage ticker={selectedTicker} companyName={displayName} />;
-      case "ratio-analysis": return <RatioAnalysisPage ticker={selectedTicker} companyName={displayName} />;
-      case "technical-analysis": return <TechnicalAnalysisPage ticker={selectedTicker} companyName={displayName} />;
-      case "risk-assessment": return <RiskAssessmentPage ticker={selectedTicker} companyName={displayName} />;
+      case "overview": return <OverviewPage ticker={selectedTicker} companyName={displayName} analysisData={analysisData} />;
+      case "ratio-analysis": return <RatioAnalysisPage ticker={selectedTicker} companyName={displayName} analysisData={analysisData} />;
+      case "technical-analysis": return <TechnicalAnalysisPage ticker={selectedTicker} companyName={displayName} analysisData={analysisData} />;
+      case "risk-assessment": return <RiskAssessmentPage ticker={selectedTicker} companyName={displayName} analysisData={analysisData} />;
       default: return null;
     }
   };

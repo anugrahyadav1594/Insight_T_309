@@ -2,8 +2,13 @@
 
 import RiskFactorCard from "./shared/RiskFactorCard";
 import AiAnalysisButton from "./shared/AiAnalysisButton";
+import type { CompanyAnalysisResponse } from "@/lib/types";
 
-interface Props { ticker: string; companyName: string }
+interface Props {
+  ticker: string;
+  companyName: string;
+  analysisData?: CompanyAnalysisResponse | null;
+}
 
 const riskData: Record<string, any> = {
   RELIANCE: {
@@ -18,46 +23,52 @@ const riskData: Record<string, any> = {
     valuation: [
       { title: "Valuation Risk", description: "P/E inline with sector", score: 30, status: "Low Risk" },
       { title: "Expectation Risk", description: "Moderate expectations", score: 25, status: "Low Risk" },
+      { title: "Growth Premia", description: "Fairly priced growth", score: 28, status: "Low Risk" },
     ],
     market: [
-      { title: "Market Risk (Beta)", description: "Beta 1.1", score: 28, status: "Low Risk" },
-      { title: "Volatility Risk", description: "Annualized 28.5%", score: 32, status: "Moderate Risk" },
+      { title: "Beta Risk", description: "Beta ~ 1.05", score: 32, status: "Moderate Risk" },
+      { title: "Liquidity Risk", description: "High trading volume", score: 10, status: "Low Risk" },
+      { title: "Volatility Risk", description: "30D Volatility ~ 28.5%", score: 35, status: "Moderate Risk" },
     ],
     industry: [
-      { title: "Industry Risk", description: "Cyclical energy/retail", score: 30, status: "Low Risk" },
-      { title: "Entry Barrier", description: "High capital required", score: 18, status: "Low Risk" },
+      { title: "Competitive Risk", description: "Strong market position", score: 20, status: "Low Risk" },
+      { title: "Regulatory Risk", description: "Telecom & Energy regulations", score: 42, status: "Moderate Risk" },
     ],
     macro: [
-      { title: "Macro Risk", description: "Crude/currency exposure", score: 42, status: "Moderate Risk" },
-      { title: "Execution Risk", description: "Multiple large projects", score: 35, status: "Moderate Risk" },
+      { title: "Interest Rate Risk", description: "Moderate sensitivity", score: 30, status: "Low Risk" },
+      { title: "Currency Risk", description: "Import/Export exposure", score: 35, status: "Moderate Risk" },
     ],
     table: [
-      { factor: "Leverage", weight: 20, score: 15, contribution: 3.0, status: "Low" },
-      { factor: "Coverage", weight: 15, score: 22, contribution: 3.3, status: "Low" },
-      { factor: "Earnings Stability", weight: 15, score: 38, contribution: 5.7, status: "Moderate" },
-      { factor: "Margin", weight: 10, score: 35, contribution: 3.5, status: "Moderate" },
-      { factor: "Valuation", weight: 15, score: 30, contribution: 4.5, status: "Low" },
-      { factor: "Market", weight: 10, score: 28, contribution: 2.8, status: "Low" },
-      { factor: "Industry", weight: 10, score: 30, contribution: 3.0, status: "Low" },
-      { factor: "Macro", weight: 5, score: 38, contribution: 1.9, status: "Moderate" },
+      { factor: "Financial Risk", weight: 30, score: 28, contribution: 8.4, status: "Low" },
+      { factor: "Valuation Risk", weight: 25, score: 27, contribution: 6.8, status: "Low" },
+      { factor: "Market Risk", weight: 20, score: 26, contribution: 5.2, status: "Low" },
+      { factor: "Industry Risk", weight: 15, score: 31, contribution: 4.7, status: "Moderate" },
+      { factor: "Macro Risk", weight: 10, score: 325, contribution: 3.3, status: "Moderate" },
     ],
   },
 };
 
-export default function RiskAssessmentPage({ ticker, companyName }: Props) {
+export default function RiskAssessmentPage({ ticker, companyName, analysisData }: Props) {
   const d = riskData[ticker] || riskData.RELIANCE;
+  const riskObj = (analysisData?.scores as any)?.risk;
+
+  const overallRisk = riskObj?.score != null ? Math.round(Number(riskObj.score)) : d.overallRisk;
+  const overallSafety = 100 - overallRisk;
+  const overallLabel = riskObj?.category || (overallRisk < 35 ? "Low Risk" : overallRisk < 65 ? "Moderate Risk" : "High Risk");
+  const overallDescription = (analysisData?.ai as any)?.risk_summary || d.overallDescription;
+
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-8 backdrop-blur-xl">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Overall Risk Assessment</p>
         <h3 className="mt-1 text-xl font-bold text-white">{companyName}</h3>
         <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
-          <div className="flex flex-col items-center"><span className="text-4xl font-bold text-red-400">{d.overallRisk}</span><span className="text-xs text-slate-500">RISK</span></div>
+          <div className="flex flex-col items-center"><span className="text-4xl font-bold text-red-400">{overallRisk}</span><span className="text-xs text-slate-500">RISK</span></div>
           <div className="h-16 w-px bg-white/[0.08]" />
-          <div className="flex flex-col items-center"><span className="text-4xl font-bold text-emerald-400">{d.overallSafety}</span><span className="text-xs text-slate-500">SAFETY</span></div>
+          <div className="flex flex-col items-center"><span className="text-4xl font-bold text-emerald-400">{overallSafety}</span><span className="text-xs text-slate-500">SAFETY</span></div>
           <div className="flex flex-col items-center sm:ml-8">
-            <span className={`inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-semibold ${d.overallLabel === "Low Risk" ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-400" : "border-amber-500/20 bg-amber-500/15 text-amber-400"}`}>{d.overallLabel}</span>
-            <p className="mt-3 max-w-sm text-center text-sm text-slate-400">{d.overallDescription}</p>
+            <span className={`inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-semibold ${overallLabel === "Low Risk" ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-400" : "border-amber-500/20 bg-amber-500/15 text-amber-400"}`}>{overallLabel}</span>
+            <p className="mt-3 max-w-sm text-center text-sm text-slate-400">{overallDescription}</p>
           </div>
         </div>
       </div>
