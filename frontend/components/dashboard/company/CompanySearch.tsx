@@ -1,18 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { companyDataMap } from "@/lib/companyData";
 
 interface CompanySearchProps {
-  onSearch: (symbol: string) => void;
+  onSearch?: (symbol: string) => void;
+  onSelect?: (symbol: string) => void;
   onBack?: () => void;
+  selectedTicker?: string;
 }
 
-export default function CompanySearch({ onSearch, onBack }: CompanySearchProps) {
+export default function CompanySearch({ onSearch, onSelect, onBack }: CompanySearchProps) {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+
+  const handleSelect = (symbol: string) => {
+    if (onSearch) onSearch(symbol);
+    if (onSelect) onSelect(symbol);
+    setQuery("");
+  };
 
   const suggestions = Object.values(companyDataMap).filter(
     (c) =>
@@ -21,8 +29,18 @@ export default function CompanySearch({ onSearch, onBack }: CompanySearchProps) 
   );
 
   return (
-    <div className="relative z-30">
-      <div className="relative max-w-xl">
+    <div className="relative z-30 flex items-center gap-4">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+          title="Back to Dashboard"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+      )}
+
+      <div className="relative w-full max-w-xl">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input
@@ -49,10 +67,7 @@ export default function CompanySearch({ onSearch, onBack }: CompanySearchProps) 
                 suggestions.map((s) => (
                   <button
                     key={s.symbol}
-                    onClick={() => {
-                      onSearch(s.symbol);
-                      setQuery("");
-                    }}
+                    onClick={() => handleSelect(s.symbol)}
                     className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition hover:bg-white/5"
                   >
                     <div>

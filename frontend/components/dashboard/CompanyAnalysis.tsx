@@ -16,6 +16,7 @@
  */
 
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { COMPANY_SUB_TABS, type CompanySubTab } from "@/lib/companyTabs";
 import { companyDataMap } from "@/lib/companyData";
 import CompanyHeader from "./company/CompanyHeaderNew";
@@ -27,13 +28,19 @@ import RiskAssessmentPage from "./company/RiskAssessmentPage";
 
 interface CompanyAnalysisProps {
   initialTicker?: string;
+  selectedSymbol?: string;
+  onBack?: () => void;
 }
 
-export default function CompanyAnalysis({ initialTicker = "RELIANCE" }: CompanyAnalysisProps) {
-  const [selectedTicker, setSelectedTicker] = useState(initialTicker);
+export default function CompanyAnalysis({
+  initialTicker = "RELIANCE",
+  selectedSymbol,
+  onBack,
+}: CompanyAnalysisProps) {
+  const [selectedTicker, setSelectedTicker] = useState(selectedSymbol || initialTicker);
   const [activeTab, setActiveTab] = useState<CompanySubTab>("overview");
 
-  const companyInfo = useMemo(() => companyDataMap[selectedTicker], [selectedTicker]);
+  const companyInfo = useMemo(() => companyDataMap[selectedTicker] || companyDataMap["RELIANCE"], [selectedTicker]);
 
   const displayName = companyInfo?.name || selectedTicker;
   const displayPrice = companyInfo?.price;
@@ -58,17 +65,32 @@ export default function CompanyAnalysis({ initialTicker = "RELIANCE" }: CompanyA
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <CompanySearch onSelect={handleCompanySelect} selectedTicker={selectedTicker} />
+      <CompanySearch onSearch={handleCompanySelect} onBack={onBack} />
       <CompanyHeader name={displayName} ticker={selectedTicker} exchange="NSE" sector={displaySector} price={displayPrice} change={displayChange} chips={displayChips} />
 
-      <div className="overflow-x-auto">
-        <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-1 backdrop-blur-xl">
-          {COMPANY_SUB_TABS.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${activeTab === tab.id ? "bg-cyan-500/15 text-cyan-300 shadow-sm" : "text-slate-400 hover:bg-white/[0.04] hover:text-white"}`}>
-              {tab.label}
-            </button>
-          ))}
+      <div className="overflow-x-auto no-scrollbar">
+        <div className="flex gap-1.5 rounded-2xl border border-white/10 bg-black/40 p-1.5 backdrop-blur-xl">
+          {COMPANY_SUB_TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
+                  isActive ? "text-cyan-300" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span className="relative z-10">{tab.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="company-subtab-active"
+                    className="absolute inset-0 rounded-xl bg-cyan-500/15 border border-cyan-500/30 shadow-md shadow-cyan-500/10"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 

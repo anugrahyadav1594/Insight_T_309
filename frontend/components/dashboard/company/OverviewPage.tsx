@@ -5,6 +5,7 @@ import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { Newspaper } from "lucide-react";
+import { companyDataMap } from "@/lib/companyData";
 
 interface Props { ticker: string; companyName: string }
 
@@ -26,20 +27,84 @@ function getPrices(base: number) {
   return d;
 }
 
-const newsData = [
-  { time: "2d ago", source: "India Infoline", headline: "Reliance Industries Share Price Rallies 3%: What's Driving the Stock Higher?" },
-  { time: "10h ago", source: "The Economic Times", headline: "Maruti Suzuki India - Reliance Industries, ITC among 10 stocks that saw highest buying by LIC in Q1. See full list" },
-  { time: "4d ago", source: "simplywall.st", headline: "Reliance Stock And 2 Indian Energy Names Facing Margin Pressure" },
-  { time: "2d ago", source: "The Hindu", headline: "Stock markets edged higher in early trade amid lower crude oil prices, buying in Reliance Industries" },
-  { time: "2d ago", source: "Upstox", headline: "SENSEX, NIFTY50 gain for second straight session led by Reliance Industries, SBI" },
-  { time: "2d ago", source: "Moneycontrol.com", headline: "Reliance Industries shares rise 3.5% on crossing key technical indicator, multiple block deals" },
-  { time: "2d ago", source: "ETV Bharat", headline: "Sensex Climbs 374 Points On Buying In Reliance, ICICI Bank; Nifty Ends Flat" },
-  { time: "1d ago", source: "scanx.trade", headline: "Reliance Industries executives to meet investors at Emkay Confluence 2026" },
-];
+function ChartTooltip({ active, payload }: any) {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0]?.payload;
+  if (!data) return null;
+
+  const formattedDate = new Date(data.date).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const formattedVol =
+    data.volume >= 1e7
+      ? `${(data.volume / 1e7).toFixed(2)} Cr`
+      : `${(data.volume / 1e5).toFixed(2)} L`;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0c1322]/95 p-4 text-xs shadow-2xl backdrop-blur-2xl space-y-2.5 min-w-[200px] z-50">
+      <div className="border-b border-white/10 pb-2 flex items-center justify-between">
+        <span className="font-bold text-slate-200">{formattedDate}</span>
+        <span className="text-[10px] text-slate-500 font-mono">NSE</span>
+      </div>
+
+      <div className="space-y-1.5 font-mono text-xs">
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5 text-blue-400 font-medium">
+            <span className="h-2 w-2 rounded-full bg-blue-500" /> Price
+          </span>
+          <span className="font-bold text-white">₹{data.price?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+        </div>
+
+        {data.ma20 !== undefined && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-cyan-400 font-medium">
+              <span className="h-2 w-2 rounded-full bg-cyan-400" /> MA 20
+            </span>
+            <span className="font-semibold text-cyan-300">₹{data.ma20?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+          </div>
+        )}
+
+        {data.ma50 !== undefined && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-amber-400 font-medium">
+              <span className="h-2 w-2 rounded-full bg-amber-400" /> MA 50
+            </span>
+            <span className="font-semibold text-amber-300">₹{data.ma50?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+          </div>
+        )}
+
+        {data.volume !== undefined && (
+          <div className="flex items-center justify-between gap-4 border-t border-white/5 pt-1.5">
+            <span className="flex items-center gap-1.5 text-slate-400 font-medium">
+              <span className="h-2 w-2 rounded-full bg-slate-500" /> Volume
+            </span>
+            <span className="font-semibold text-slate-300">{formattedVol}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function OverviewPage({ ticker, companyName }: Props) {
   const [selectedRange, setSelectedRange] = useState("1Y");
-  const prices = useMemo(() => getPrices(1334.80), []);
+  const companyInfo = companyDataMap[ticker] || companyDataMap["RELIANCE"];
+  const basePrice = companyInfo?.price || 1334.80;
+  const changePct = companyInfo?.change || 0.74;
+  const changeVal = (basePrice * changePct) / 100;
+  const isPositive = changePct >= 0;
+
+  const prices = useMemo(() => getPrices(basePrice), [basePrice]);
+
+  const newsData = [
+    { time: "2h ago", source: "Market Pulse", headline: `${companyName} (${ticker}) shows solid momentum following Q3 performance updates.` },
+    { time: "10h ago", source: "The Economic Times", headline: `${companyName} among top institutional holdings seeing increased allocation.` },
+    { time: "1d ago", source: "Moneycontrol.com", headline: `Technical analysts highlight key support & breakout levels for ${ticker}.` },
+    { time: "2d ago", source: "Mint", headline: `${companyName} executives outline strategic growth drivers at investor conference.` },
+  ];
 
   return (
     <div className="space-y-8">
@@ -73,11 +138,17 @@ export default function OverviewPage({ ticker, companyName }: Props) {
             {ticker} — NSE
           </p>
           <p className="mt-4 text-5xl font-bold text-white">
-            ₹1,334.80
+            ₹{basePrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </p>
           <div className="mt-4">
-            <span className="inline-flex items-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-400">
-              +0.74% (₹9.80)
+            <span
+              className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-medium ${
+                isPositive
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                  : "border-red-500/30 bg-red-500/10 text-red-400"
+              }`}
+            >
+              {isPositive ? "+" : ""}{changePct.toFixed(2)}% ({isPositive ? "+" : ""}₹{changeVal.toFixed(2)})
             </span>
           </div>
         </div>
@@ -130,19 +201,19 @@ export default function OverviewPage({ ticker, companyName }: Props) {
                 tick={{ fill: "#475569", fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                domain={[0, "auto"]}
-                tickFormatter={(v) => v.toString()}
-                label={{ value: "Price (INR)", angle: -90, position: "insideLeft", style: { fill: "#475569", fontSize: 11 } }}
+                domain={["auto", "auto"]}
+                tickFormatter={(v) => `₹${v}`}
               />
-              <YAxis yAxisId="vol" orientation="right" hide domain={[0, "auto"]} />
+              <YAxis yAxisId="vol" orientation="right" hide domain={[0, (max: number) => max * 4]} />
               <Tooltip
-                contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#fff", fontSize: "12px" }}
-                labelStyle={{ color: "#94a3b8" }}
+                content={<ChartTooltip />}
+                cursor={{ stroke: "rgba(34, 211, 238, 0.4)", strokeWidth: 1, strokeDasharray: "4 4" }}
+                isAnimationActive={false}
               />
-              <Bar yAxisId="vol" dataKey="volume" fill="#334155" barSize={4} radius={[2, 2, 0, 0]} />
-              <Line yAxisId="price" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2} dot={false} />
-              <Line yAxisId="price" type="monotone" dataKey="ma20" stroke="#22d3ee" strokeWidth={1.5} dot={false} strokeDasharray="6 3" />
-              <Line yAxisId="price" type="monotone" dataKey="ma50" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="6 3" />
+              <Bar yAxisId="vol" dataKey="volume" fill="rgba(51, 65, 85, 0.35)" barSize={4} radius={[2, 2, 0, 0]} />
+              <Line yAxisId="price" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <Line yAxisId="price" type="monotone" dataKey="ma20" stroke="#22d3ee" strokeWidth={1.5} dot={false} strokeDasharray="6 3" isAnimationActive={false} />
+              <Line yAxisId="price" type="monotone" dataKey="ma50" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="6 3" isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

@@ -20,14 +20,32 @@ const INDICATORS = [
 
 function getPrices(base: number) {
   const d: any[] = [];
-  let p = base * 0.85;
+  let closePrice = base * 0.85;
   const today = new Date();
-  for (let i = 252; i >= 0; i--) {
-    const dt = new Date(today); dt.setDate(dt.getDate() - i);
-    p = Math.max(p + (Math.random() - 0.48) * base * 0.02, base * 0.6);
-    d.push({ date: dt.toISOString().split("T")[0], price: Math.round(p * 100) / 100, volume: Math.round((8 + Math.random() * 12) * 1e6), ma50: undefined as number | undefined });
+  for (let i = 120; i >= 0; i--) {
+    const dt = new Date(today);
+    dt.setDate(dt.getDate() - i);
+    const open = Math.max(closePrice + (Math.random() - 0.49) * base * 0.015, base * 0.5);
+    const change = (Math.random() - 0.48) * base * 0.025;
+    const close = Math.max(open + change, base * 0.5);
+    const high = Math.max(open, close) + Math.random() * base * 0.012;
+    const low = Math.min(open, close) - Math.random() * base * 0.012;
+
+    d.push({
+      date: dt.toISOString().split("T")[0],
+      open: Math.round(open * 100) / 100,
+      high: Math.round(high * 100) / 100,
+      low: Math.round(low * 100) / 100,
+      close: Math.round(close * 100) / 100,
+      price: Math.round(close * 100) / 100,
+      volume: Math.round((8 + Math.random() * 12) * 1e6),
+      ma50: undefined as number | undefined,
+    });
+    closePrice = close;
   }
-  for (let i = 49; i < d.length; i++) d[i].ma50 = Math.round(d.slice(i - 49, i + 1).reduce((s: number, x: any) => s + x.price, 0) / 50 * 100) / 100;
+  for (let i = 49; i < d.length; i++) {
+    d[i].ma50 = Math.round(d.slice(i - 49, i + 1).reduce((s: number, x: any) => s + x.close, 0) / 50 * 100) / 100;
+  }
   return d;
 }
 
@@ -85,11 +103,124 @@ function DiagCard({ title, value, status, description, progress }: any) {
   );
 }
 
+const CandlestickShape = (props: any) => {
+  const { x, width, yAxis, payload } = props;
+  if (!payload || !yAxis || typeof yAxis.scale !== "function") return null;
+
+  const { open, high, low, close } = payload;
+  if (open === undefined || high === undefined || low === undefined || close === undefined) return null;
+
+  const isGreen = close >= open;
+  const color = isGreen ? "#34d399" : "#f87171";
+  const strokeColor = isGreen ? "#059669" : "#dc2626";
+
+  const yHigh = yAxis.scale(high);
+  const yLow = yAxis.scale(low);
+  const yOpen = yAxis.scale(open);
+  const yClose = yAxis.scale(close);
+
+  const candleTop = Math.min(yOpen, yClose);
+  const candleHeight = Math.max(Math.abs(yClose - yOpen), 2);
+  const candleWidth = Math.max(width * 0.65, 3);
+  const candleX = x + (width - candleWidth) / 2;
+  const wickX = x + width / 2;
+
+  return (
+    <g className="candlestick-group">
+      <line
+        x1={wickX}
+        y1={yHigh}
+        x2={wickX}
+        y2={yLow}
+        stroke={color}
+        strokeWidth={1.5}
+      />
+      <rect
+        x={candleX}
+        y={candleTop}
+        width={candleWidth}
+        height={candleHeight}
+        fill={color}
+        stroke={strokeColor}
+        strokeWidth={1}
+        rx={1}
+      />
+    </g>
+  );
+};
+
+function ChartTooltip({ active, payload }: any) {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0]?.payload;
+  if (!data) return null;
+
+  const formattedDate = new Date(data.date).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const formattedVol =
+    data.volume >= 1e7
+      ? `${(data.volume / 1e7).toFixed(2)} Cr`
+      : `${(data.volume / 1e5).toFixed(2)} L`;
+
+  const isGreen = (data.close ?? data.price ?? 0) >= (data.open ?? 0);
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0c1322]/95 p-4 text-xs shadow-2xl backdrop-blur-2xl space-y-2.5 min-w-[220px] z-50">
+      <div className="border-b border-white/10 pb-2 flex items-center justify-between">
+        <span className="font-bold text-slate-200">{formattedDate}</span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isGreen ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>
+          {isGreen ? "BULLISH 🟢" : "BEARISH 🔴"}
+        </span>
+      </div>
+
+      <div className="space-y-1.5 font-mono text-xs">
+        {data.open !== undefined && (
+          <div className="grid grid-cols-2 gap-2 text-slate-300 border-b border-white/5 pb-2">
+            <div><span className="text-slate-500">Open:</span> ₹{data.open.toFixed(2)}</div>
+            <div><span className="text-slate-500">High:</span> ₹{data.high.toFixed(2)}</div>
+            <div><span className="text-slate-500">Low:</span> ₹{data.low.toFixed(2)}</div>
+            <div><span className="text-slate-500">Close:</span> ₹{data.close.toFixed(2)}</div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-4 pt-1">
+          <span className="flex items-center gap-1.5 text-cyan-400 font-medium">
+            <span className="h-2 w-2 rounded-full bg-cyan-400" /> Price
+          </span>
+          <span className="font-bold text-white">₹{(data.close ?? data.price)?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+        </div>
+
+        {data.ma50 !== undefined && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-amber-400 font-medium">
+              <span className="h-2 w-2 rounded-full bg-amber-400" /> MA 50
+            </span>
+            <span className="font-semibold text-amber-300">₹{data.ma50?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+          </div>
+        )}
+
+        {data.volume !== undefined && (
+          <div className="flex items-center justify-between gap-4 border-t border-white/5 pt-1.5">
+            <span className="flex items-center gap-1.5 text-slate-400 font-medium">
+              <span className="h-2 w-2 rounded-full bg-slate-500" /> Volume
+            </span>
+            <span className="font-semibold text-slate-300">{formattedVol}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TechnicalAnalysisPage({ ticker }: Props) {
   const [active, setActive] = useState<Record<string, boolean>>(Object.fromEntries(INDICATORS.map(i => [i.id, i.on])));
+  const [chartType, setChartType] = useState<"candlestick" | "line">("candlestick");
   const d = tData[ticker] || tData.RELIANCE;
-  const prices = useMemo(() => getPrices(2920), []);
-  const tt = { background: "rgba(15,23,42,0.95)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: "#fff", fontSize: "12px" } as React.CSSProperties;
+  const basePrice = d.keyLevels?.high52w ? d.keyLevels.high52w * 0.8 : 2800;
+  const prices = useMemo(() => getPrices(basePrice), [basePrice]);
 
   return (
     <div className="space-y-8">
@@ -105,18 +236,63 @@ export default function TechnicalAnalysisPage({ ticker }: Props) {
         </div>
       </div>
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 backdrop-blur-xl">
-        <h3 className="text-lg font-semibold text-white mb-4">Technical Chart · 1Y</h3>
+        <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+          <h3 className="text-lg font-semibold text-white">Technical Chart · 1Y</h3>
+          <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 p-1">
+            <button
+              onClick={() => setChartType("candlestick")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                chartType === "candlestick"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              🕯️ Candlestick
+            </button>
+            <button
+              onClick={() => setChartType("line")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                chartType === "line"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              📈 Line
+            </button>
+          </div>
+        </div>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={prices}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="date" tick={{ fill: "#64748b", fontSize: 10 }} interval={42} />
-              <YAxis yAxisId="price" tick={{ fill: "#64748b", fontSize: 10 }} domain={["dataMin-50","dataMax+50"]} tickFormatter={v => `₹${v}`} />
-              <YAxis yAxisId="vol" orientation="right" hide />
-              <Tooltip contentStyle={tt} />
-              {active.volume && <Bar yAxisId="vol" dataKey="volume" fill="rgba(34,211,238,0.08)" barSize={2} />}
-              <Line yAxisId="price" type="monotone" dataKey="price" stroke="#22d3ee" strokeWidth={2} dot={false} />
-              {active.ma50 && <Line yAxisId="price" type="monotone" dataKey="ma50" stroke="#fbbf24" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />}
+              <XAxis dataKey="date" tick={{ fill: "#64748b", fontSize: 10 }} interval={24} />
+              <YAxis yAxisId="price" tick={{ fill: "#64748b", fontSize: 10 }} domain={["auto", "auto"]} tickFormatter={v => `₹${v}`} />
+              <YAxis yAxisId="vol" orientation="right" hide domain={[0, (max: number) => max * 4]} />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ stroke: "rgba(34, 211, 238, 0.4)", strokeWidth: 1, strokeDasharray: "4 4" }}
+                isAnimationActive={false}
+              />
+              {active.volume && <Bar yAxisId="vol" dataKey="volume" fill="rgba(51, 65, 85, 0.35)" barSize={4} radius={[2, 2, 0, 0]} />}
+              {chartType === "candlestick" ? (
+                <Bar
+                  yAxisId="price"
+                  dataKey="close"
+                  shape={<CandlestickShape />}
+                  isAnimationActive={false}
+                />
+              ) : (
+                <Line
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey="price"
+                  stroke="#22d3ee"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              )}
+              {active.ma50 && <Line yAxisId="price" type="monotone" dataKey="ma50" stroke="#fbbf24" strokeWidth={1.5} dot={false} strokeDasharray="4 2" isAnimationActive={false} />}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -139,7 +315,7 @@ export default function TechnicalAnalysisPage({ ticker }: Props) {
         <h3 className="mb-4 text-lg font-semibold text-white">Trend & Volatility</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{d.trend.map((x: any) => <DiagCard key={x.title} {...x} />)}</div>
       </div>
-      <AiAnalysisButton label="Get AI Chart Interpretation" />
+      <AiAnalysisButton label="Get AI Technical Analysis" />
     </div>
   );
 }
