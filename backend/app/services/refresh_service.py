@@ -152,7 +152,7 @@ async def refresh_company_data(
     )
 
     price_bars = [(p.trade_date, p.open, p.high, p.low, p.close, p.volume) for p in prices]
-    await company_repository.upsert_prices(db, company, price_bars)
+    await company_repository.replace_prices(db, company, price_bars)
 
     await company_repository.delete_existing_statements(db, company.id, "annual")
     statement_rows = [

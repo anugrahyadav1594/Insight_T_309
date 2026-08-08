@@ -250,6 +250,29 @@ async def upsert_prices(
     await session.flush()
 
 
+async def replace_prices(
+    session: AsyncSession,
+    company: Company,
+    bars: list[tuple[date, Decimal, Decimal, Decimal, Decimal, int]],
+) -> None:
+    """Replace the company's ENTIRE price history with the provided bars.
+
+    Used on a full provider refresh so stale seed history never mixes with real
+    provider prices (which would skew movers/technical returns).
+    """
+    from sqlalchemy import delete
+
+    await session.execute(
+        delete(CompanyPrice).where(CompanyPrice.company_id == company.id)
+    )
+    for trade_date, open_, high, low, close, volume in bars:
+        session.add(CompanyPrice(
+            company_id=company.id, trade_date=trade_date,
+            open=open_, high=high, low=low, close=close, volume=volume,
+        ))
+    await session.flush()
+
+
 async def upsert_statements(
     session: AsyncSession,
     company: Company,
