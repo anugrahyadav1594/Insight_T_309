@@ -8,7 +8,7 @@ import WatchlistSearch from "./watchlist/WatchlistSearch";
 import WatchlistTable from "./watchlist/WatchlistTable";
 import WatchlistEmpty from "./watchlist/WatchlistEmpty";
 import { watchlist as initialWatchlist, getWatchlistStats, type WatchlistStock, type AISignal } from "@/lib/watchlistData";
-import { listWatchlists, getWatchlist, addWatchlistItem } from "@/lib/api";
+import { listWatchlists, getWatchlist, addWatchlistItem, ApiError } from "@/lib/api";
 import type { EnrichedItem } from "@/lib/types";
 
 interface WatchlistProps {
@@ -68,8 +68,12 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
         setError(null);
       } catch (err: unknown) {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : "Failed to load watchlist";
-        setError(message);
+        if (err instanceof ApiError && err.code === "DEMO_MODE") {
+          setError(null);
+        } else {
+          const message = err instanceof Error ? err.message : "Failed to load watchlist";
+          setError(message);
+        }
         setStocks(initialWatchlist);
       } finally {
         if (!cancelled) setLoading(false);

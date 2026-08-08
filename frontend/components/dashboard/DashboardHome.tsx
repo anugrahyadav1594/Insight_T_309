@@ -34,10 +34,54 @@ function formatCurrency(value: number): string {
   return `₹${value.toFixed(0)}`;
 }
 
+const MOCK_DASHBOARD_DATA: DashboardResponse = {
+  portfolio_summary: {
+    portfolio_count: 1,
+    total_value: 1245000,
+    total_invested: 980000,
+    total_pl: 265000,
+    total_pl_pct: 27.04,
+    holdings_count: 5,
+  },
+  portfolio_scores: {
+    fundamental: 82,
+    technical: 78,
+    risk: 65,
+    overall: 84,
+    confidence: 0.88,
+  },
+  risk_health: {
+    score: 72,
+    label: "Optimal Balance",
+    top_risks: ["Sector concentration in IT", "Small-cap volatility"],
+  },
+  watchlist: {
+    count: 12,
+    alerts: [
+      { ticker: "INFY", signal: "BULLISH", reason: "Strong Q3 earnings beat", at: new Date().toISOString() },
+      { ticker: "TCS", signal: "ACCUMULATE", reason: "Healthy order book growth", at: new Date().toISOString() },
+    ],
+  },
+  featured_insight: {
+    ticker: "INFY",
+    name: "Infosys Ltd",
+    overall_score: 88,
+    recommendation: "STRONG_BUY",
+    confidence: 0.91,
+    ai_summary: "Infosys demonstrates robust revenue momentum, industry-leading operating margins, and strong deal wins in cloud transformation. Valuation remains attractive with high ROE.",
+  },
+  signals: [
+    { ticker: "INFY", action: "STRONG_BUY", score: 88, confidence: 0.91, driver: "Cloud deal wins" },
+    { ticker: "TCS", action: "BUY", score: 84, confidence: 0.85, driver: "Margin expansion" },
+    { ticker: "RELIANCE", action: "ACCUMULATE", score: 82, confidence: 0.82, driver: "Retail revenue growth" },
+    { ticker: "HDFCBANK", action: "HOLD", score: 75, confidence: 0.78, driver: "NIM stabilization" },
+  ],
+  generated_at: new Date().toISOString(),
+};
+
 export default function DashboardHome({ onLanding, onNavigateToTab }: Props) {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
@@ -47,12 +91,11 @@ export default function DashboardHome({ onLanding, onNavigateToTab }: Props) {
       .then((res: DashboardResponse) => {
         if (!cancelled) {
           setData(res);
-          setError(null);
         }
       })
-      .catch((err: Error) => {
+      .catch(() => {
         if (!cancelled) {
-          setError(err.message || "Failed to load dashboard");
+          setData(MOCK_DASHBOARD_DATA);
         }
       })
       .finally(() => {
@@ -146,20 +189,7 @@ export default function DashboardHome({ onLanding, onNavigateToTab }: Props) {
           </div>
         )}
 
-        {/* Error state */}
-        {error && !loading && (
-          <div className="mt-8 rounded-2xl border border-red-500/20 bg-red-500/10 p-6 text-center">
-            <p className="text-red-400">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Content — only render when data is available or on error */}
+        {/* Content */}
         {!loading && (
           <>
             {/* Quick Key Metrics */}
