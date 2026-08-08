@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.2
 
     # --- CORS -----------------------------------------------------------------
-    CORS_ORIGINS: str = "http://localhost:5513,http://127.0.0.1:5513"
+    CORS_ORIGINS: str = "http://localhost:5513,http://127.0.0.1:5513,http://localhost:3000,http://127.0.0.1:3000"
 
     # --- Rate limiting (slowapi + Redis) ---------------------------------------
     RATE_LIMIT_DEFAULT_PER_MINUTE: int = 120
