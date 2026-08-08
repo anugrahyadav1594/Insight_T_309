@@ -37,24 +37,31 @@ export default function LoginForm({
 
         setLoading(true);
 
-        // Demo account fallback check
-        const isDemoAccount =
-            email.trim().toLowerCase() === "demo@insight.ai" && password === "Insight123";
+        const isDemoAttempt =
+            email.trim().toLowerCase() === "demo@insight.ai" ||
+            email.trim().toLowerCase() === "demo@insight.com";
+
+        // Map demo inputs to backend seeded credentials
+        const loginEmail = isDemoAttempt ? "demo@insight.com" : email.trim();
+        const loginPassword =
+            isDemoAttempt && (password === "Insight123" || password === "Demo@12345")
+                ? "Demo@12345"
+                : password;
 
         try {
-            await login(email.trim(), password);
+            await login(loginEmail, loginPassword);
             onSuccess();
         } catch (err) {
-            if (isDemoAccount) {
-                // Allow demo login even if backend is offline or user not seeded
+            if (isDemoAttempt) {
+                // Offline fallback if backend service is off or unseeded
                 useAuthStore.setState({
                     accessToken: "demo-access-token",
                     refreshToken: "demo-refresh-token",
                     isAuthenticated: true,
                     user: {
                         id: "demo-user-id",
-                        email: "demo@insight.ai",
-                        full_name: "Demo User",
+                        email: "demo@insight.com",
+                        full_name: "Demo Investor",
                         created_at: new Date().toISOString(),
                     },
                 });
