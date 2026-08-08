@@ -48,6 +48,15 @@ body {
     scrollbar-color: rgba(0, 212, 255, 0.25) #0B1220;
 }
 
+/* Utility to hide scrollbars while preserving scrollability */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
 /* Hide standard number input spin arrows */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

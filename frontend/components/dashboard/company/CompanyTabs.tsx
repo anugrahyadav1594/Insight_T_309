@@ -17,7 +17,7 @@ interface CompanyTabsProps {
 export default function CompanyTabs({ activeTab, onTabChange }: CompanyTabsProps) {
   return (
     <div className="border-b border-white/10">
-      <div className="flex gap-1 overflow-x-auto">
+      <div className="flex gap-1 overflow-x-auto overflow-y-hidden no-scrollbar">
         {COMPANY_SUB_TABS.map((tab) => {
           const isActive = tab.id === activeTab;
           return (
