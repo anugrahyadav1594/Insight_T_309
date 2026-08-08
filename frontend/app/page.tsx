@@ -101,9 +101,10 @@ export default function Home() {
     }
 
     return (
-        <main className="relative bg-[#050816] overflow-x-hidden min-h-screen">
+        <main className="relative bg-[#050816] overflow-x-hidden min-h-screen" suppressHydrationWarning>
             {/* Page-wide grid overlay */}
             <div
+                suppressHydrationWarning
                 className="pointer-events-none fixed inset-0 z-0"
                 style={{
                     backgroundImage:
