@@ -70,6 +70,16 @@ class Settings(BaseSettings):
     LLM_TIMEOUT_SECONDS: float = 30.0
     LLM_TEMPERATURE: float = 0.2
 
+    # --- Google OAuth -----------------------------------------------------------
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_AUTH_URI: str = "https://accounts.google.com/o/oauth2/v2/auth"
+    GOOGLE_TOKEN_URI: str = "https://oauth2.googleapis.com/token"
+    GOOGLE_USERINFO_URI: str = "https://www.googleapis.com/oauth2/v3/userinfo"
+    GOOGLE_SCOPES: str = "openid email profile"
+    GOOGLE_REDIRECT_URI: str = "http://localhost:9056/api/v1/auth/google/callback"
+    GOOGLE_FRONTEND_REDIRECT_URI: str = "http://localhost:3000/auth/google/callback"
+
     # --- CORS -----------------------------------------------------------------
     CORS_ORIGINS: str = "http://localhost:5513,http://127.0.0.1:5513"
 

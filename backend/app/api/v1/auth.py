@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import urllib.parse
+
 from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser, get_current_user
@@ -21,8 +24,48 @@ from app.schemas.auth import (
 )
 from app.schemas.common import SuccessEnvelope, ok
 from app.services.auth_service import AuthService
+from app.services.google_oauth_service import google_oauth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.get("/google/authorize")
+async def google_authorize(next: str | None = None) -> Response:
+    """Build the Google login URL and redirect the browser to it.
+
+    Returns a 307 redirect to Google's consent screen.
+    """
+    url = google_oauth_service.authorize_url(next_path=next)
+    return RedirectResponse(url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+
+@router.get("/google/callback", include_in_schema=True)
+async def google_callback(
+    request: Request,
+    code: str,
+    state: str,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """OAuth callback from Google.
+
+    Exchanges the code, finds-or-creates the user, issues our JWT pair, and
+    redirects the browser to the frontend callback URL with the tokens.
+    """
+    result = await google_oauth_service.callback(
+        db, code=code, state=state, next_path=None
+    )
+    next_uri = result["next"]
+    params = urllib.parse.urlencode(
+        {
+            "access_token": result["access_token"],
+            "refresh_token": result["refresh_token"],
+            "expires_in": result["expires_in"],
+        }
+    )
+    redirect_target = f"{settings.GOOGLE_FRONTEND_REDIRECT_URI}?{params}"
+    if next_uri and next_uri != "/":
+        redirect_target += f"&next={urllib.parse.quote(next_uri)}"
+    return RedirectResponse(redirect_target, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 
 @router.post(
