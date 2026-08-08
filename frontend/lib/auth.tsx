@@ -44,7 +44,7 @@ interface AuthState {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function persistTokens(access: string, refresh: string) {
+export function persistTokens(access: string, refresh: string) {
   localStorage.setItem(TOKEN_KEY, access);
   localStorage.setItem(REFRESH_KEY, refresh);
 }
@@ -72,7 +72,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const accessToken = localStorage.getItem(TOKEN_KEY);
     const refreshToken = localStorage.getItem(REFRESH_KEY);
     if (accessToken) {
-      set({ accessToken, refreshToken, isAuthenticated: true });
+      const isDemo = accessToken.startsWith("demo-");
+      set({
+        accessToken,
+        refreshToken,
+        isAuthenticated: true,
+        user: isDemo
+          ? {
+              id: "demo-user-id",
+              email: "demo@insight.com",
+              full_name: "Demo Investor",
+              created_at: new Date().toISOString(),
+            }
+          : get().user,
+      });
     }
   },
 
@@ -167,6 +180,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // ── Fetch current user profile ───────────────────────────────────────────
 
   fetchMe: async () => {
+    const { accessToken } = get();
+    if (accessToken?.startsWith("demo-")) {
+      set({
+        user: get().user || {
+          id: "demo-user-id",
+          email: "demo@insight.com",
+          full_name: "Demo Investor",
+          created_at: new Date().toISOString(),
+        },
+        isAuthenticated: true,
+      });
+      return;
+    }
     try {
       const user = await apiClient.get<MeResponse>("/auth/me");
       set({ user });

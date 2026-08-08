@@ -4,7 +4,7 @@ import { useState } from "react";
 import AuthInput from "./AuthInput";
 import Divider from "./Divider";
 import GoogleButton from "./GoogleButton";
-import { useAuthStore } from "@/lib/auth";
+import { useAuthStore, persistTokens } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 
 interface Props {
@@ -54,6 +54,7 @@ export default function LoginForm({
         } catch (err) {
             if (isDemoAttempt) {
                 // Offline fallback if backend service is off or unseeded
+                persistTokens("demo-access-token", "demo-refresh-token");
                 useAuthStore.setState({
                     accessToken: "demo-access-token",
                     refreshToken: "demo-refresh-token",
