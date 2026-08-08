@@ -5,8 +5,7 @@ import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Respons
 import MetricCard from "./shared/MetricCard";
 import TradingSignal from "./shared/TradingSignal";
 import StatusBadge from "./shared/StatusBadge";
-import AiAnalysisButton from "./shared/AiAnalysisButton";
-
+import { getCompanyInfo } from "@/lib/companyData";
 import type { CompanyAnalysisResponse } from "@/lib/types";
 
 interface Props {
@@ -221,25 +220,31 @@ function ChartTooltip({ active, payload }: any) {
   );
 }
 
+interface Props {
+  ticker: string;
+  companyName: string;
+  analysisData?: CompanyAnalysisResponse | null;
+}
+
 export default function TechnicalAnalysisPage({ ticker, companyName, analysisData }: Props) {
   const [active, setActive] = useState<Record<string, boolean>>(Object.fromEntries(INDICATORS.map(i => [i.id, i.on])));
   const [chartType, setChartType] = useState<"candlestick" | "line">("candlestick");
 
   const raw = analysisData?.raw_data;
   const techScores = (analysisData?.scores as any)?.technical;
-  const d = tData[ticker] || tData.RELIANCE;
+  const companyInfo = useMemo(() => getCompanyInfo(ticker), [ticker]);
 
-  const basePrice = raw?.price ? Number(raw.price) : (d.keyLevels?.high52w ? d.keyLevels.high52w * 0.8 : 2800);
+  const basePrice = raw?.price ? Number(raw.price) : (companyInfo.price || 2800);
   const prices = useMemo(() => getPrices(basePrice), [basePrice]);
 
-  const signal = techScores?.signal || d.signal;
-  const confidence = techScores?.confidence != null ? Math.round(Number(techScores.confidence) * 100) : d.confidence;
-  const explanation = techScores?.reasons || d.explanation;
+  const signal = techScores?.signal || (companyInfo.recommendation.verdict.includes("Buy") ? "BUY" : "HOLD");
+  const confidence = techScores?.confidence != null ? Math.round(Number(techScores.confidence) * 100) : companyInfo.recommendation.score;
+  const explanation = techScores?.reasons || companyInfo.recommendation.summaryPoints;
 
-  const high52w = raw?.high_52w ? Number(raw.high_52w) : d.keyLevels.high52w;
-  const low52w = raw?.low_52w ? Number(raw.low_52w) : d.keyLevels.low52w;
-  const avgVolume = raw?.avg_volume ? `${(Number(raw.avg_volume) / 1e6).toFixed(1)}M` : d.keyLevels.avgVolume;
-  const volatility = raw?.volatility_30d ? `${(Number(raw.volatility_30d) * 100).toFixed(1)}%` : d.keyLevels.volatility;
+  const high52w = raw?.high_52w ? Number(raw.high_52w) : Math.round(basePrice * 1.2 * 100) / 100;
+  const low52w = raw?.low_52w ? Number(raw.low_52w) : Math.round(basePrice * 0.75 * 100) / 100;
+  const avgVolume = raw?.avg_volume ? `${(Number(raw.avg_volume) / 1e6).toFixed(1)}M` : "8.5M";
+  const volatility = raw?.volatility_30d ? `${(Number(raw.volatility_30d) * 100).toFixed(1)}%` : "24.2%";
 
   return (
     <div className="space-y-8">
