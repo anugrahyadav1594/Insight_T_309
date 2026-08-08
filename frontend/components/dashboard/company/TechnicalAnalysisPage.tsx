@@ -195,7 +195,7 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
     const sma50Series = chart.addSeries(LineSeries, { color: "#22d3ee", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
     sma50Series.setData(ma50);
 
-    const sma200Series = chart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 1.5, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+    const sma200Series = chart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 2, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
     sma200Series.setData(ma200);
 
     chartApiRef.current = chart;
@@ -225,9 +225,9 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
     });
     const hist = chart.addSeries(HistogramSeries, { priceFormat: { type: "price", precision: 2, minMove: 0.01 } });
     hist.setData(histogram);
-    const macdL = chart.addSeries(LineSeries, { color: "#3b82f6", lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false });
+    const macdL = chart.addSeries(LineSeries, { color: "#3b82f6", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
     macdL.setData(macdLine);
-    const sigL = chart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false });
+    const sigL = chart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
     sigL.setData(signalLine);
     chart.timeScale().fitContent();
     const onResize = () => { if (macdRef.current) chart.applyOptions({ width: macdRef.current.clientWidth }); };
@@ -246,7 +246,7 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
       width: rsiRef.current.clientWidth,
       height: 100,
     });
-    const rsiL = chart.addSeries(LineSeries, { color: "#a78bfa", lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false });
+    const rsiL = chart.addSeries(LineSeries, { color: "#a78bfa", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
     rsiL.setData(rsiData);
     const ob = chart.addSeries(LineSeries, { color: "rgba(239,68,68,0.3)", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
     ob.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
