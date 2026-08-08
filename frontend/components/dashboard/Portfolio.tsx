@@ -16,7 +16,7 @@ import {
   getBottomLaggards,
 } from "@/lib/portfolioData";
 import type { Holding, PortfolioSummary } from "@/lib/portfolioData";
-import { listPortfolios, getPortfolio } from "@/lib/api";
+import { listPortfolios, getPortfolio, ApiError } from "@/lib/api";
 import type { HoldingOut } from "@/lib/types";
 
 interface PortfolioProps {
@@ -81,8 +81,12 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
         setError(null);
       } catch (err: unknown) {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : "Failed to load portfolio";
-        setError(message);
+        if (err instanceof ApiError && err.code === "DEMO_MODE") {
+          setError(null);
+        } else {
+          const message = err instanceof Error ? err.message : "Failed to load portfolio";
+          setError(message);
+        }
         // Fall back to mock data on error
         setPortfolioData(mockPortfolio);
         setHoldingsData(mockHoldings);
