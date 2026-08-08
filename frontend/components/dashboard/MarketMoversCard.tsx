@@ -182,59 +182,84 @@ export default function MarketMoversCard({ onNavigateToTab }: MarketMoversCardPr
             <p className="mt-0.5 text-xs text-slate-400">Top performance breakdown</p>
           </div>
 
-          {/* Direction Toggle Pills (Gainers vs Losers) */}
-          <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1">
+          {/* Direction Toggle Pills with Framer Motion Sliding Pill */}
+          <div className="relative flex items-center rounded-xl border border-white/10 bg-black/40 p-1">
             <button
               onClick={() => setDirection("gainers")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                direction === "gainers"
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm"
-                  : "text-slate-400 hover:text-white"
+              className={`relative flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                direction === "gainers" ? "text-emerald-400" : "text-slate-400 hover:text-white"
               }`}
             >
-              <TrendingUp className="h-3.5 w-3.5" />
-              Gainers
+              <TrendingUp className="relative z-10 h-3.5 w-3.5" />
+              <span className="relative z-10">Gainers</span>
+              {direction === "gainers" && (
+                <motion.div
+                  layoutId="mover-direction-bg"
+                  className="absolute inset-0 rounded-lg bg-emerald-500/20 border border-emerald-500/30 shadow-sm"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
             </button>
+
             <button
               onClick={() => setDirection("losers")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                direction === "losers"
-                  ? "bg-red-500/20 text-red-400 border border-red-500/30 shadow-sm"
-                  : "text-slate-400 hover:text-white"
+              className={`relative flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                direction === "losers" ? "text-red-400" : "text-slate-400 hover:text-white"
               }`}
             >
-              <TrendingDown className="h-3.5 w-3.5" />
-              Losers
+              <TrendingDown className="relative z-10 h-3.5 w-3.5" />
+              <span className="relative z-10">Losers</span>
+              {direction === "losers" && (
+                <motion.div
+                  layoutId="mover-direction-bg"
+                  className="absolute inset-0 rounded-lg bg-red-500/20 border border-red-500/30 shadow-sm"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
             </button>
           </div>
         </div>
 
-        {/* Timeframe Selector Pills (1D, 1W, 1M, 3M, 6M, 1Y) */}
-        <div className="mt-4 flex items-center justify-between gap-1 rounded-2xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-xl">
+        {/* Timeframe Selector Pills with Framer Motion Sliding Pill */}
+        <div className="relative mt-4 flex items-center justify-between gap-1 rounded-2xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-xl">
           {TIMEFRAMES.map((tf) => {
             const isSelected = period === tf.value;
             return (
               <button
                 key={tf.value}
                 onClick={() => setPeriod(tf.value)}
-                className={`relative flex-1 rounded-xl py-1 text-center text-xs font-bold transition-all duration-200 ${
-                  isSelected
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20"
-                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                className={`relative flex-1 py-1 text-center text-xs font-bold transition-colors duration-200 ${
+                  isSelected ? "text-white" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                {tf.label}
+                <span className="relative z-10">{tf.label}</span>
+                {isSelected && (
+                  <motion.div
+                    layoutId="mover-period-bg"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/25"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
               </button>
             );
           })}
         </div>
 
         {/* Movers Stock List */}
-        <div className="mt-5 space-y-3">
-          <AnimatePresence mode="popLayout">
-            {movers.map((item, idx) => (
-              <MoverRow key={`${item.ticker}-${period}-${direction}`} item={item} index={idx} />
-            ))}
+        <div className="mt-5 space-y-3 min-h-[260px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${direction}-${period}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: EASE }}
+              className="space-y-3"
+            >
+              {movers.map((item, idx) => (
+                <MoverRow key={item.ticker} item={item} index={idx} />
+              ))}
+            </motion.div>
           </AnimatePresence>
         </div>
       </div>
@@ -265,10 +290,10 @@ function MoverRow({ item, index }: { item: MoverItem; index: number }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.3, delay: index * 0.04, ease: EASE }}
+      initial={{ opacity: 0, y: 12, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -12, scale: 0.98 }}
+      transition={{ duration: 0.25, delay: index * 0.04, ease: EASE }}
       whileHover={{ x: 4, transition: HOVER_SPRING }}
       className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3.5 transition-colors duration-300 hover:border-cyan-400/30 hover:bg-white/10"
     >
