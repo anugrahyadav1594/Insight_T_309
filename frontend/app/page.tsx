@@ -10,7 +10,7 @@ import Faq from "@/components/landing/Faq";
 import Footer from "@/components/landing/Footer";
 import AuthOverlay from "@/components/auth/AuthOverlay";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { useAuthStore } from "@/lib/auth";
+import { useAuthStore, persistTokens } from "@/lib/auth";
 
 export default function Home() {
     const {
@@ -29,10 +29,29 @@ export default function Home() {
     const [hasVisitedDashboard, setHasVisitedDashboard] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
-    // Hydrate auth store from localStorage on mount
+    // Hydrate auth store from localStorage on mount & handle OAuth callback
     useEffect(() => {
         setIsMounted(true);
         hydrate();
+
+        // Handle OAuth Callback Tokens in URL (?access_token=...&refresh_token=...)
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const accessToken = params.get("access_token");
+            const refreshToken = params.get("refresh_token");
+
+            if (accessToken && refreshToken) {
+                persistTokens(accessToken, refreshToken);
+                useAuthStore.setState({
+                    accessToken,
+                    refreshToken,
+                    isAuthenticated: true,
+                });
+                window.history.replaceState({}, document.title, window.location.pathname);
+                setCurrentView("dashboard");
+                fetchMe().catch(() => {});
+            }
+        }
 
         const storedView = localStorage.getItem("insight_currentView") as "landing" | "dashboard" | null;
         const storedVisited = localStorage.getItem("insight_hasVisitedDashboard");

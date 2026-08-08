@@ -254,9 +254,9 @@ export default function RegisterForm({
             <Divider />
 
             <GoogleButton
-                onClick={() =>
-                    alert("Google Sign-In will be added with the backend.")
-                }
+                onClick={() => {
+                    window.location.href = "http://localhost:9056/api/v1/auth/google/authorize";
+                }}
             />
 
             <p className="text-center text-sm text-gray-400">

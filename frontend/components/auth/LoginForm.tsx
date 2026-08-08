@@ -157,9 +157,9 @@ export default function LoginForm({
             <Divider />
 
             <GoogleButton
-                onClick={() =>
-                    alert("Google Sign-In will be added with the backend.")
-                }
+                onClick={() => {
+                    window.location.href = "http://localhost:9056/api/v1/auth/google/authorize";
+                }}
             />
 
             <div className="text-center text-sm">

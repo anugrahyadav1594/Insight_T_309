@@ -615,3 +615,100 @@ export interface MoversResponse {
   count: number;
   items: MoverItem[];
 }
+
+// ─── Company Search & Analysis ──────────────────────────────────────────────
+
+export interface CompanySearchHit {
+  ticker: string;
+  name: string;
+  exchange: string;
+  sector?: string | null;
+  industry?: string | null;
+  market_cap?: number | null;
+}
+
+export interface CompanySearchResponse {
+  query: string;
+  total: number;
+  items: CompanySearchHit[];
+}
+
+export interface CompanyIdentityOut {
+  name: string;
+  exchange: string;
+  sector?: string | null;
+  industry?: string | null;
+  description?: string | null;
+}
+
+export interface CompanyRawDataOut {
+  price: number;
+  previous_close?: number | null;
+  day_change?: number | null;
+  day_change_pct?: number | null;
+  volume?: number | null;
+  avg_volume?: number | null;
+  market_cap?: number | null;
+  pe_ratio?: number | null;
+  pb_ratio?: number | null;
+  ps_ratio?: number | null;
+  ev_ebitda?: number | null;
+  roe?: number | null;
+  roa?: number | null;
+  gross_margin?: number | null;
+  operating_margin?: number | null;
+  net_margin?: number | null;
+  revenue?: number | null;
+  revenue_growth?: number | null;
+  net_income?: number | null;
+  eps?: number | null;
+  eps_growth?: number | null;
+  debt_to_equity?: number | null;
+  current_ratio?: number | null;
+  free_cash_flow?: number | null;
+  dividend_yield?: number | null;
+  beta?: number | null;
+  high_52w?: number | null;
+  low_52w?: number | null;
+  volatility_30d?: number | null;
+}
+
+export interface CompanyCalculatedMetricsOut {
+  revenue_growth?: number | null;
+  eps_growth?: number | null;
+  gross_margin?: number | null;
+  operating_margin?: number | null;
+  net_margin?: number | null;
+  free_cash_flow?: number | null;
+  roe?: number | null;
+  roa?: number | null;
+  debt_to_equity?: number | null;
+  current_ratio?: number | null;
+  interest_coverage?: number | null;
+  fcf_yield?: number | null;
+  quick_ratio?: number | null;
+  position_52w?: number | null;
+  ma20_slope?: number | null;
+  ma50_slope?: number | null;
+  ma200_slope?: number | null;
+  price_vs_ma20?: number | null;
+  price_vs_ma50?: number | null;
+  price_vs_ma200?: number | null;
+  rsi_14?: number | null;
+  momentum_3m?: number | null;
+  volume_ratio?: number | null;
+  volatility_30d?: number | null;
+  max_drawdown_1y?: number | null;
+}
+
+export interface CompanyAnalysisResponse {
+  ticker: string;
+  identity: CompanyIdentityOut;
+  raw_data: CompanyRawDataOut;
+  calculated_metrics: CompanyCalculatedMetricsOut;
+  scores: Record<string, unknown>;
+  ai: Record<string, unknown>;
+  data_as_of: string;
+  source: string;
+  stale?: boolean;
+}

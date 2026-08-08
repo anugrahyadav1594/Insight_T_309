@@ -15,10 +15,12 @@
  *   import RiskAssessmentPage from "./company/RiskAssessmentPage";
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { COMPANY_SUB_TABS, type CompanySubTab } from "@/lib/companyTabs";
 import { companyDataMap } from "@/lib/companyData";
+import { getCompanyAnalysis } from "@/lib/api";
+import type { CompanyAnalysisResponse } from "@/lib/types";
 import CompanyHeader from "./company/CompanyHeaderNew";
 import CompanySearch from "./company/CompanySearch";
 import OverviewPage from "./company/OverviewPage";
@@ -39,13 +41,28 @@ export default function CompanyAnalysis({
 }: CompanyAnalysisProps) {
   const [selectedTicker, setSelectedTicker] = useState(selectedSymbol || initialTicker);
   const [activeTab, setActiveTab] = useState<CompanySubTab>("overview");
+  const [analysisData, setAnalysisData] = useState<CompanyAnalysisResponse | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCompanyAnalysis(selectedTicker)
+      .then((res) => {
+        if (!cancelled && res) setAnalysisData(res);
+      })
+      .catch(() => {
+        // Fall back to offline static company map
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTicker]);
 
   const companyInfo = useMemo(() => companyDataMap[selectedTicker] || companyDataMap["RELIANCE"], [selectedTicker]);
 
-  const displayName = companyInfo?.name || selectedTicker;
-  const displayPrice = companyInfo?.price;
-  const displayChange = companyInfo?.change;
-  const displaySector = companyInfo?.sector;
+  const displayName = analysisData?.identity.name || companyInfo?.name || selectedTicker;
+  const displayPrice = analysisData?.raw_data.price ? Number(analysisData.raw_data.price) : companyInfo?.price;
+  const displayChange = analysisData?.raw_data.day_change_pct ? Number(analysisData.raw_data.day_change_pct) : companyInfo?.change;
+  const displaySector = analysisData?.identity.sector || companyInfo?.sector;
   const displayChips = companyInfo?.chips || [];
 
   const handleCompanySelect = (ticker: string) => {
