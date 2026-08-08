@@ -1,4 +1,3 @@
-   
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -115,8 +114,8 @@ const tData: Record<string, any> = {
       { title: "Stochastic", value: "97.5", subtitle: "14-Day Oscillator", status: "OVERBOUGHT", statusColor: "text-red-400 border-red-500/30 bg-red-500/10", barColor: "#f87171", progress: 97.5 },
     ],
     trend: [
-      { title: "SMA 50", value: "₹1,300.20", subtitle: "+2.7% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 70 },
-      { title: "SMA 200", value: "₹1,402.36", subtitle: "-4.8% vs Current Price", status: "BEAR MARKET", statusColor: "text-amber-400 border-amber-500/30 bg-amber-500/10", progress: 30 },
+      { title: "SMA 50", value: "1,300.20", subtitle: "+2.7% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 70 },
+      { title: "SMA 200", value: "1,402.36", subtitle: "-4.8% vs Current Price", status: "BEAR MARKET", statusColor: "text-amber-400 border-amber-500/30 bg-amber-500/10", progress: 30 },
       { title: "ATR (14)", value: "22.89", subtitle: "Translates to 1.7% daily move", status: "VOLATILITY", statusColor: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
     ],
   },
@@ -130,8 +129,8 @@ const tData: Record<string, any> = {
       { title: "Stochastic", value: "71.5", subtitle: "14-Day Oscillator", status: "BULLISH", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", barColor: "#34d399", progress: 71.5 },
     ],
     trend: [
-      { title: "SMA 50", value: "₹3,620", subtitle: "+5.2% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 75 },
-      { title: "SMA 200", value: "₹3,480", subtitle: "+8.1% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 72 },
+      { title: "SMA 50", value: "3,620", subtitle: "+5.2% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 75 },
+      { title: "SMA 200", value: "3,480", subtitle: "+8.1% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 72 },
       { title: "ATR (14)", value: "58.2", subtitle: "Translates to 1.5% daily move", status: "VOLATILITY", statusColor: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
     ],
   },
@@ -158,13 +157,15 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
   const [active, setActive] = useState<Record<string, boolean>>(Object.fromEntries(INDICATORS.map(i => [i.id, i.on])));
   const chartRef = useRef<HTMLDivElement>(null);
   const chartApiRef = useRef<IChartApi | null>(null);
+  const macdRef = useRef<HTMLDivElement>(null);
+  const rsiRef = useRef<HTMLDivElement>(null);
   const d = tData[ticker] || tData.RELIANCE;
 
   const { candleData, volumeData, ma50, ma200 } = generateOHLC(1334.80);
   const { macdLine, signalLine, histogram } = generateMACD(candleData);
   const rsiData = generateRSI(candleData);
 
-  // Main chart
+  // Main candlestick chart
   useEffect(() => {
     if (!chartRef.current) return;
     if (chartApiRef.current) { chartApiRef.current.remove(); chartApiRef.current = null; }
@@ -179,7 +180,6 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
       height: 520,
     });
 
-    // v5 API: chart.addSeries(Type, options)
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#26a65b", downColor: "#ef5350", borderUpColor: "#26a65b", borderDownColor: "#ef5350",
       wickUpColor: "#26a65b", wickDownColor: "#ef5350",
@@ -213,7 +213,6 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
   }, [ticker, candleData, volumeData, ma50, ma200]);
 
   // MACD sub-chart
-  const macdRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!macdRef.current) return;
     const chart = createChart(macdRef.current, {
@@ -237,7 +236,6 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
   }, [histogram, macdLine, signalLine]);
 
   // RSI sub-chart
-  const rsiRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!rsiRef.current) return;
     const chart = createChart(rsiRef.current, {
@@ -262,7 +260,6 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
 
   return (
     <div className="space-y-8">
-      {/* Indicator Selector + Period */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap gap-2">
           {INDICATORS.map(ind => (
@@ -277,7 +274,6 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
         </select>
       </div>
 
-      {/* Main candlestick chart */}
       <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e1a] p-4">
         <div className="mb-3 flex items-center justify-between px-2">
           <h3 className="text-base font-semibold text-white">{companyName}</h3>

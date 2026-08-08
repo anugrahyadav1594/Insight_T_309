@@ -226,3 +226,87 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
     ],
   },
 };
+
+import { screenerStocks } from "./screenerData";
+
+export function getCompanyInfo(ticker: string): CompanyAnalysisData {
+  const symbolUpper = (ticker || "RELIANCE").toUpperCase();
+  if (companyDataMap[symbolUpper]) {
+    return companyDataMap[symbolUpper];
+  }
+
+  const screenerMatch = screenerStocks.find((s) => s.symbol.toUpperCase() === symbolUpper);
+
+  let hash = 0;
+  for (let i = 0; i < symbolUpper.length; i++) {
+    hash = (hash << 5) - hash + symbolUpper.charCodeAt(i);
+    hash |= 0;
+  }
+  const positiveHash = Math.abs(hash);
+
+  const price = screenerMatch?.price || (200 + (positiveHash % 3500));
+  const change = screenerMatch
+    ? (positiveHash % 2 === 0 ? 1.5 : -1.2)
+    : Math.round(((positiveHash % 500) / 100 - 2.5) * 100) / 100;
+  const sector = screenerMatch?.sector || (["Technology", "Banking & Financials", "Automotive", "Consumer Goods", "Energy", "Healthcare"][positiveHash % 6]);
+  const name = screenerMatch?.name || `${symbolUpper} India Ltd`;
+  const pe = screenerMatch?.pe || (12 + (positiveHash % 40));
+  const roe = screenerMatch?.roe || (10 + (positiveHash % 25));
+  const revenueGrowth = screenerMatch?.revenueGrowth || (8 + (positiveHash % 22));
+  const debtEquity = screenerMatch?.debtEquity || (positiveHash % 100) / 100;
+
+  return {
+    symbol: symbolUpper,
+    name,
+    price,
+    change,
+    marketCap: price > 1500 ? "Large Cap" : price > 500 ? "Mid Cap" : "Small Cap",
+    sector,
+    chips: [
+      price > 1500 ? "Large Cap" : "Mid Cap",
+      roe > 18 ? "High Quality" : "Growth",
+      debtEquity < 0.3 ? "Low Debt" : "Leveraged",
+      pe < 25 ? "Value" : "High Growth",
+    ],
+    recommendation: {
+      verdict: pe < 20 && roe > 18 ? "Strong Buy" : pe < 30 ? "Buy" : "Hold",
+      score: 65 + (positiveHash % 30),
+      confidence: "High Conviction",
+      summaryPoints: [
+        `Revenue growth remains healthy at ${revenueGrowth}% YoY in ${sector}.`,
+        `Return on Equity (ROE) stands strong at ${roe}%.`,
+        `Valuation P/E multiple of ${pe}x is reasonable relative to peer group.`,
+        `Balance sheet shows debt-to-equity ratio of ${debtEquity}.`,
+        `Positive long-term structural tailwinds supporting earnings outlook.`,
+      ],
+    },
+    financials: {
+      revenueGrowth: `${revenueGrowth}%`,
+      roe: `${roe}%`,
+      epsGrowth: `${Math.round(revenueGrowth * 1.1)}%`,
+      debtEquity: `${debtEquity}`,
+    },
+    analysis: {
+      businessQuality: `${name} operates a strong model in ${sector} with consistent cash flow generation and healthy return metrics.`,
+      valuation: `Currently trading at ${pe}x trailing earnings, presenting a fair risk-reward entry profile.`,
+      growth: `Top-line momentum supported by expanding market presence and operating leverage in ${sector}.`,
+      management: `Seasoned executive leadership focused on disciplined capital allocation and operational execution.`,
+      moat: `Protected by strong brand recognition, scale advantages, and high switching costs in its market.`,
+    },
+    risks: [
+      `Macroeconomic volatility impacting demand patterns in ${sector}.`,
+      `Raw material cost pressures or currency fluctuations.`,
+      `Intense competitive pricing from domestic and global peers.`,
+    ],
+    opportunities: [
+      `Expansion into new high-margin product verticals and geographic regions.`,
+      `Digital automation initiatives boosting operating margins.`,
+      `Strong industry tailwinds driving organic market share gains.`,
+    ],
+    news: [
+      { title: `${name} reports quarterly performance update with expanded margins`, time: "Today", source: "Moneycontrol" },
+      { title: `Leading research firm issues analyst rating on ${symbolUpper}`, time: "Yesterday", source: "Bloomberg" },
+      { title: `${symbolUpper} announces expansion plans in key domestic markets`, time: "2 days ago", source: "Mint" },
+    ],
+  };
+}

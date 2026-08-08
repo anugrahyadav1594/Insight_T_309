@@ -153,15 +153,18 @@ export default function ResultsTable({
                   className="group/row border-b border-white/5 transition-colors duration-300 hover:bg-white/[0.04]"
                 >
                   <td className="px-8 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <button
+                      onClick={() => onViewStock?.(stock.symbol)}
+                      className="flex items-center gap-3 text-left group/btn"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 transition group-hover/btn:border-cyan-400 group-hover/btn:bg-cyan-500/20">
                         {stock.symbol.slice(0, 2)}
                       </div>
                       <div>
-                        <div className="font-bold text-white">{stock.symbol}</div>
-                        <div className="text-xs text-slate-500 max-w-[140px] truncate">{stock.name}</div>
+                        <div className="font-bold text-white group-hover/btn:text-cyan-300 transition">{stock.symbol}</div>
+                        <div className="text-xs text-slate-500 max-w-[140px] truncate group-hover/btn:text-slate-300">{stock.name}</div>
                       </div>
-                    </div>
+                    </button>
                   </td>
 
                   <td className="px-4 py-4 text-slate-400">

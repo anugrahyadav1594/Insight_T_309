@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import RiskFactorCard from "./shared/RiskFactorCard";
 import AiAnalysisButton from "./shared/AiAnalysisButton";
+import { getCompanyInfo } from "@/lib/companyData";
 import type { CompanyAnalysisResponse } from "@/lib/types";
 
 interface Props {
@@ -10,46 +12,53 @@ interface Props {
   analysisData?: CompanyAnalysisResponse | null;
 }
 
-const riskData: Record<string, any> = {
-  RELIANCE: {
-    overallRisk: 29, overallSafety: 71, overallLabel: "Low Risk",
-    overallDescription: "This stock has relatively low risk factors. Favorable profile.",
+function getCompanyRisk(companyInfo: any) {
+  const de = parseFloat(companyInfo.financials?.debtEquity || "0.3");
+  const roe = parseFloat(companyInfo.financials?.roe || "18");
+  const baseRisk = Math.min(Math.max(Math.round(25 + de * 20 - (roe - 15) * 0.5), 12), 75);
+
+  return {
+    overallRisk: baseRisk,
+    overallSafety: 100 - baseRisk,
+    overallLabel: baseRisk < 30 ? "Low Risk" : baseRisk < 55 ? "Moderate Risk" : "High Risk",
+    overallDescription: `${companyInfo.name} displays a ${baseRisk < 30 ? "conservative" : "balanced"} risk profile with debt-to-equity ratio of ${de} and ROE of ${roe}%.`,
     financial: [
-      { title: "Leverage Risk", description: "Debt/Equity at 0.60x", score: 15, status: "Low Risk" },
-      { title: "Coverage Risk", description: "Interest coverage at 8.2x", score: 22, status: "Low Risk" },
-      { title: "Earnings Stability", description: "Volatile due to commodities", score: 38, status: "Moderate Risk" },
-      { title: "Margin Risk", description: "Net margins stable ~8-9%", score: 35, status: "Moderate Risk" },
+      { title: "Leverage Risk", description: `Debt/Equity at ${de}x`, score: Math.round(de * 35), status: de < 0.3 ? "Low Risk" : "Moderate Risk" },
+      { title: "Coverage Risk", description: "Interest coverage healthy > 8x", score: 18, status: "Low Risk" },
+      { title: "Earnings Stability", description: `ROE at ${roe}%`, score: Math.max(35 - Math.round(roe * 0.8), 10), status: "Low Risk" },
+      { title: "Margin Risk", description: `Stable profitability in ${companyInfo.sector}`, score: 24, status: "Low Risk" },
     ],
     valuation: [
-      { title: "Valuation Risk", description: "P/E inline with sector", score: 30, status: "Low Risk" },
-      { title: "Expectation Risk", description: "Moderate expectations", score: 25, status: "Low Risk" },
-      { title: "Growth Premia", description: "Fairly priced growth", score: 28, status: "Low Risk" },
+      { title: "Valuation Risk", description: `Valuation aligns with ${companyInfo.sector} peers`, score: 28, status: "Low Risk" },
+      { title: "Expectation Risk", description: "Moderate market expectations", score: 25, status: "Low Risk" },
+      { title: "Growth Premia", description: "Growth price targets supported by earnings", score: 22, status: "Low Risk" },
     ],
     market: [
-      { title: "Beta Risk", description: "Beta ~ 1.05", score: 32, status: "Moderate Risk" },
-      { title: "Liquidity Risk", description: "High trading volume", score: 10, status: "Low Risk" },
-      { title: "Volatility Risk", description: "30D Volatility ~ 28.5%", score: 35, status: "Moderate Risk" },
+      { title: "Beta Risk", description: `Beta relative to Nifty 50`, score: 28, status: "Low Risk" },
+      { title: "Liquidity Risk", description: "High average daily trading volume", score: 12, status: "Low Risk" },
+      { title: "Volatility Risk", description: "30D Volatility within standard range", score: 30, status: "Low Risk" },
     ],
     industry: [
-      { title: "Competitive Risk", description: "Strong market position", score: 20, status: "Low Risk" },
-      { title: "Regulatory Risk", description: "Telecom & Energy regulations", score: 42, status: "Moderate Risk" },
+      { title: "Competitive Risk", description: `Strong market position in ${companyInfo.sector}`, score: 20, status: "Low Risk" },
+      { title: "Regulatory Risk", description: "Compliance monitored regularly", score: 32, status: "Moderate Risk" },
     ],
     macro: [
-      { title: "Interest Rate Risk", description: "Moderate sensitivity", score: 30, status: "Low Risk" },
-      { title: "Currency Risk", description: "Import/Export exposure", score: 35, status: "Moderate Risk" },
+      { title: "Interest Rate Risk", description: "Moderate sensitivity to rate cycles", score: 28, status: "Low Risk" },
+      { title: "Currency Risk", description: "Exposure managed via hedging", score: 30, status: "Low Risk" },
     ],
     table: [
-      { factor: "Financial Risk", weight: 30, score: 28, contribution: 8.4, status: "Low" },
-      { factor: "Valuation Risk", weight: 25, score: 27, contribution: 6.8, status: "Low" },
-      { factor: "Market Risk", weight: 20, score: 26, contribution: 5.2, status: "Low" },
-      { factor: "Industry Risk", weight: 15, score: 31, contribution: 4.7, status: "Moderate" },
-      { factor: "Macro Risk", weight: 10, score: 325, contribution: 3.3, status: "Moderate" },
+      { factor: "Financial Risk", weight: 30, score: Math.round(baseRisk * 0.9), contribution: (baseRisk * 0.27), status: "Low" },
+      { factor: "Valuation Risk", weight: 25, score: Math.round(baseRisk * 0.95), contribution: (baseRisk * 0.24), status: "Low" },
+      { factor: "Market Risk", weight: 20, score: Math.round(baseRisk * 0.85), contribution: (baseRisk * 0.17), status: "Low" },
+      { factor: "Industry Risk", weight: 15, score: Math.round(baseRisk * 1.05), contribution: (baseRisk * 0.16), status: "Moderate" },
+      { factor: "Macro Risk", weight: 10, score: Math.round(baseRisk * 1.1), contribution: (baseRisk * 0.11), status: "Moderate" },
     ],
-  },
-};
+  };
+}
 
 export default function RiskAssessmentPage({ ticker, companyName, analysisData }: Props) {
-  const d = riskData[ticker] || riskData.RELIANCE;
+  const companyInfo = useMemo(() => getCompanyInfo(ticker), [ticker]);
+  const d = useMemo(() => getCompanyRisk(companyInfo), [companyInfo]);
   const riskObj = (analysisData?.scores as any)?.risk;
 
   const overallRisk = riskObj?.score != null ? Math.round(Number(riskObj.score)) : d.overallRisk;

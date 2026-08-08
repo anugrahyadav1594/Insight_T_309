@@ -110,28 +110,20 @@ export default function RatioAnalysisPage({ companyName }: Props) {
 
   return (
     <div className="space-y-8">
-      {/* Revenue & Net Profit + Margin Trends — side by side */}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e1a] p-6">
           <h3 className="mb-1 text-lg font-semibold text-white">Revenue & Net Profit</h3>
-          <p className="mb-6 text-xs text-slate-500">Annual performance ( Crores)</p>
+          <p className="mb-6 text-xs text-slate-500">Annual performance</p>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData.revenueNetProfit} margin={{ top: 10, right: 10, bottom: 0, left: 0 }} barGap={4} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                 <XAxis dataKey="year" tick={{ fill: "#64748b", fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`} />
-                <Tooltip
-                  contentStyle={tt}
-                  labelStyle={{ color: "#94a3b8" }}
-                  cursor={{ fill: "rgba(255,255,255,0.03)", radius: 4 }}
-                  formatter={(value, name) => [`₹${Number(value).toLocaleString("en-IN")} Cr`, name === "revenue" ? "Revenue" : "Net Profit"]}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: "12px", color: "#94a3b8", paddingTop: "16px" }}
-                  formatter={(v) => v === "revenue" ? "Revenue" : "Net Profit"}
-                  iconType="square"
-                />
+                <YAxis tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip contentStyle={tt} labelStyle={{ color: "#94a3b8" }} cursor={{ fill: "rgba(255,255,255,0.03)", radius: 4 }}
+                  formatter={(value, name) => [`${Number(value).toLocaleString("en-IN")} Cr`, name === "revenue" ? "Revenue" : "Net Profit"]} />
+                <Legend wrapperStyle={{ fontSize: "12px", color: "#94a3b8", paddingTop: "16px" }}
+                  formatter={(v) => v === "revenue" ? "Revenue" : "Net Profit"} iconType="square" />
                 <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
                 <Bar dataKey="netProfit" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={32} />
               </BarChart>
@@ -148,17 +140,10 @@ export default function RatioAnalysisPage({ companyName }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                 <XAxis dataKey="year" tick={{ fill: "#64748b", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
-                <Tooltip
-                  contentStyle={tt}
-                  labelStyle={{ color: "#94a3b8" }}
-                  cursor={{ stroke: "rgba(255,255,255,0.15)", strokeDasharray: "4 4" }}
-                  formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name === "grossMargin" ? "Gross Margin" : name === "operatingMargin" ? "Operating Margin" : "Net Margin"]}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: "12px", color: "#94a3b8", paddingTop: "16px" }}
-                  formatter={(v) => v === "grossMargin" ? "Gross Margin" : v === "operatingMargin" ? "Operating Margin" : "Net Margin"}
-                  iconType="line"
-                />
+                <Tooltip contentStyle={tt} labelStyle={{ color: "#94a3b8" }} cursor={{ stroke: "rgba(255,255,255,0.15)", strokeDasharray: "4 4" }}
+                  formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name === "grossMargin" ? "Gross Margin" : name === "operatingMargin" ? "Operating Margin" : "Net Margin"]} />
+                <Legend wrapperStyle={{ fontSize: "12px", color: "#94a3b8", paddingTop: "16px" }}
+                  formatter={(v) => v === "grossMargin" ? "Gross Margin" : v === "operatingMargin" ? "Operating Margin" : "Net Margin"} iconType="line" />
                 <Line type="monotone" dataKey="grossMargin" stroke="#34d399" strokeWidth={2} dot={{ r: 3, fill: "#34d399" }} activeDot={{ r: 5, stroke: "#34d399", strokeWidth: 2, fill: "#0a0e1a" }} />
                 <Line type="monotone" dataKey="operatingMargin" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3, fill: "#22d3ee" }} activeDot={{ r: 5, stroke: "#22d3ee", strokeWidth: 2, fill: "#0a0e1a" }} />
                 <Line type="monotone" dataKey="netMargin" stroke="#fbbf24" strokeWidth={2} dot={{ r: 3, fill: "#fbbf24" }} activeDot={{ r: 5, stroke: "#fbbf24", strokeWidth: 2, fill: "#0a0e1a" }} />
@@ -168,7 +153,6 @@ export default function RatioAnalysisPage({ companyName }: Props) {
         </div>
       </div>
 
-      {/* Financial Health Radar */}
       <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e1a] p-6">
         <h3 className="mb-1 text-lg font-semibold text-white">Financial Health Radar</h3>
         <p className="mb-6 text-xs text-slate-500">Multi-dimensional financial assessment</p>
@@ -184,7 +168,6 @@ export default function RatioAnalysisPage({ companyName }: Props) {
         </div>
       </div>
 
-      {/* Profitability */}
       <SectionHeader title="Profitability" />
       <div className="grid gap-3 lg:grid-cols-4">
         {profitability.map((item) => (
@@ -195,7 +178,6 @@ export default function RatioAnalysisPage({ companyName }: Props) {
         ))}
       </div>
 
-      {/* Liquidity & Leverage side by side */}
       <div className="grid gap-8 lg:grid-cols-2">
         <div>
           <SectionHeader title="Liquidity" />
@@ -221,7 +203,6 @@ export default function RatioAnalysisPage({ companyName }: Props) {
         </div>
       </div>
 
-      {/* AI Button */}
       <button className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-white/[0.08] bg-[#0a0e1a] px-6 py-4 text-sm font-medium text-slate-300 transition-all hover:border-white/[0.14] hover:text-white">
         Get AI Ratio Analysis
       </button>

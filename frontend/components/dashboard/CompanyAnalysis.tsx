@@ -18,7 +18,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { COMPANY_SUB_TABS, type CompanySubTab } from "@/lib/companyTabs";
-import { companyDataMap } from "@/lib/companyData";
+import { companyDataMap, getCompanyInfo } from "@/lib/companyData";
 import { getCompanyAnalysis } from "@/lib/api";
 import type { CompanyAnalysisResponse } from "@/lib/types";
 import CompanyHeader from "./company/CompanyHeaderNew";
@@ -43,6 +43,14 @@ export default function CompanyAnalysis({
   const [activeTab, setActiveTab] = useState<CompanySubTab>("overview");
   const [analysisData, setAnalysisData] = useState<CompanyAnalysisResponse | null>(null);
 
+  // Sync selectedTicker when selectedSymbol prop changes (e.g. clicking View in Screener, Watchlist, Portfolio)
+  useEffect(() => {
+    if (selectedSymbol) {
+      setSelectedTicker(selectedSymbol);
+      setActiveTab("overview");
+    }
+  }, [selectedSymbol]);
+
   useEffect(() => {
     let cancelled = false;
     getCompanyAnalysis(selectedTicker)
@@ -50,14 +58,14 @@ export default function CompanyAnalysis({
         if (!cancelled && res) setAnalysisData(res);
       })
       .catch(() => {
-        // Fall back to offline static company map
+        // Fall back gracefully
       });
     return () => {
       cancelled = true;
     };
   }, [selectedTicker]);
 
-  const companyInfo = useMemo(() => companyDataMap[selectedTicker] || companyDataMap["RELIANCE"], [selectedTicker]);
+  const companyInfo = useMemo(() => getCompanyInfo(selectedTicker), [selectedTicker]);
 
   const displayName = analysisData?.identity.name || companyInfo?.name || selectedTicker;
   const displayPrice = analysisData?.raw_data.price ? Number(analysisData.raw_data.price) : companyInfo?.price;
@@ -81,7 +89,7 @@ export default function CompanyAnalysis({
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
       <CompanySearch onSearch={handleCompanySelect} onBack={onBack} />
       <CompanyHeader name={displayName} ticker={selectedTicker} exchange="NSE" sector={displaySector} price={displayPrice} change={displayChange} chips={displayChips} />
 

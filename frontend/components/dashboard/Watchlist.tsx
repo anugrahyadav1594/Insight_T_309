@@ -17,7 +17,15 @@ interface WatchlistProps {
 }
 
 export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
-  const [stocks, setStocks] = useState<WatchlistStock[]>(initialWatchlist);
+  const [stocks, setStocks] = useState<WatchlistStock[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("insight_user_watchlist_stocks");
+      if (saved) {
+        try { return JSON.parse(saved); } catch {}
+      }
+    }
+    return initialWatchlist;
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<AISignal | "All">("All");
   const [loading, setLoading] = useState(true);
@@ -34,7 +42,6 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
         if (cancelled) return;
 
         if (list.items.length === 0) {
-          setStocks(initialWatchlist);
           setLoading(false);
           return;
         }
@@ -64,17 +71,14 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
           };
         });
 
-        setStocks(mappedStocks.length > 0 ? mappedStocks : initialWatchlist);
-        setError(null);
-      } catch (err: unknown) {
-        if (cancelled) return;
-        if (err instanceof ApiError && err.code === "DEMO_MODE") {
-          setError(null);
-        } else {
-          const message = err instanceof Error ? err.message : "Failed to load watchlist";
-          setError(message);
+        if (mappedStocks.length > 0) {
+          setStocks(mappedStocks);
+          localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(mappedStocks));
         }
-        setStocks(initialWatchlist);
+        setError(null);
+      } catch {
+        if (cancelled) return;
+        setError(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -101,7 +105,11 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
     }
 
     if (next) {
-      setStocks((prev) => [next, ...prev]);
+      setStocks((prev) => {
+        const updated = [next, ...prev];
+        localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
+        return updated;
+      });
     } else {
       const randomId = Math.floor(Math.random() * 1000);
       const customStock = {
@@ -113,8 +121,20 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
         aiSignal: (Math.random() > 0.5 ? "Bullish" : "Neutral") as AISignal,
         aiScore: Math.floor(Math.random() * 40) + 60,
       };
-      setStocks((prev) => [customStock, ...prev]);
+      setStocks((prev) => {
+        const updated = [customStock, ...prev];
+        localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
+        return updated;
+      });
     }
+  };
+
+  const handleRemoveStock = (symbol: string) => {
+    setStocks((prev) => {
+      const updated = prev.filter((s) => s.symbol !== symbol);
+      localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // Filtering

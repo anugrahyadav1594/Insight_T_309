@@ -3,7 +3,7 @@ import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { Newspaper, Sparkles, Building2 } from "lucide-react";
-import { companyDataMap } from "@/lib/companyData";
+import { companyDataMap, getCompanyInfo } from "@/lib/companyData";
 import type { CompanyAnalysisResponse } from "@/lib/types";
 
 interface Props {
@@ -94,7 +94,7 @@ function ChartTooltip({ active, payload }: any) {
 
 export default function OverviewPage({ ticker, companyName, analysisData }: Props) {
   const [selectedRange, setSelectedRange] = useState("1Y");
-  const companyInfo = companyDataMap[ticker] || companyDataMap["RELIANCE"];
+  const companyInfo = useMemo(() => getCompanyInfo(ticker), [ticker]);
   const rawData = analysisData?.raw_data;
 
   const basePrice = rawData?.price ? Number(rawData.price) : (companyInfo?.price || 1334.80);

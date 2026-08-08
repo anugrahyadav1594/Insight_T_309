@@ -99,7 +99,7 @@ export default function CompanySearch({ onSearch, onSelect, onBack }: CompanySea
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="absolute left-0 right-0 mt-2 rounded-2xl border border-white/10 bg-[#0c1322] p-2 shadow-2xl backdrop-blur-2xl"
+              className="absolute left-0 right-0 mt-2 z-50 rounded-2xl border border-white/10 bg-[#0c1322] p-2 shadow-2xl backdrop-blur-2xl"
             >
               {results.length > 0 ? (
                 results.slice(0, 8).map((s) => (
