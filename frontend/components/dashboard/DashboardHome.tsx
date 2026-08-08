@@ -18,6 +18,8 @@ import {
 import { getDashboard } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import type { DashboardResponse } from "@/lib/types";
+import IpoCalendarCard from "./IpoCalendarCard";
+import MarketMoversCard from "./MarketMoversCard";
 
 interface Props {
   onLanding: () => void;
@@ -230,175 +232,11 @@ export default function DashboardHome({ onLanding, onNavigateToTab }: Props) {
 
             {/* Main Workspace Grid */}
             <div className="mt-8 grid gap-8 lg:grid-cols-12">
-              {/* Main AI Stock Insight Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: EASE }}
-                whileHover={{
-                  y: -8,
-                  scale: 1.01,
-                  transition: HOVER_SPRING,
-                }}
-                className="
-                  group
-                  relative
-                  overflow-hidden
-                  rounded-[32px]
-                  border
-                  border-white/10
-                  bg-white/5
-                  p-8
-                  backdrop-blur-3xl
-                  lg:col-span-8
-                  shadow-2xl
-                  transition-colors
-                  duration-500
-                  ease-out
-                  transform-gpu
-                  will-change-transform
-                  hover:border-cyan-400/40
-                "
-              >
-                {/* Hover Glow */}
-                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
-                  <div className="absolute -top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-[100px]" />
-                </div>
+              {/* IPO Intelligence Calendar Card */}
+              <IpoCalendarCard />
 
-                <div className="relative flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
-                      Featured AI Recommendation
-                    </span>
-                    <h3 className="mt-1 text-2xl font-bold text-white">
-                      {featured ? `${featured.ticker} (${featured.name})` : "No featured insight yet"}
-                    </h3>
-                  </div>
-                  {featured && (
-                    <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-4 py-1.5 text-xs font-bold text-emerald-400">
-                      {featured.recommendation}
-                    </span>
-                  )}
-                </div>
-
-                <p className="relative mt-4 leading-7 text-slate-300">
-                  {featured?.ai_summary || "Create a portfolio and add holdings to get AI-powered recommendations and insights."}
-                </p>
-
-                <div className="relative mt-8 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors duration-300 hover:border-cyan-400/30">
-                    <div className="text-xs text-slate-400">Overall Score</div>
-                    <div className="mt-1 text-2xl font-bold text-cyan-400">
-                      {featured ? `${Math.round(featured.overall_score)} / 100` : "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors duration-300 hover:border-cyan-400/30">
-                    <div className="text-xs text-slate-400">Confidence</div>
-                    <div className="mt-1 text-2xl font-bold text-blue-400">
-                      {featured ? `${(featured.confidence * 100).toFixed(0)}%` : "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors duration-300 hover:border-cyan-400/30">
-                    <div className="text-xs text-slate-400">Holdings</div>
-                    <div className="mt-1 text-2xl font-bold text-emerald-400">
-                      {data ? data.portfolio_summary.holdings_count : "—"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Accent */}
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.45, ease: EASE }}
-                  className="absolute bottom-0 left-0 h-[2px] w-full origin-left bg-gradient-to-r from-cyan-400 to-blue-500"
-                />
-              </motion.div>
-
-              {/* Right AI Signals / Watchlist Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
-                whileHover={{
-                  y: -8,
-                  scale: 1.01,
-                  transition: HOVER_SPRING,
-                }}
-                className="
-                  group
-                  relative
-                  overflow-hidden
-                  rounded-[32px]
-                  border
-                  border-white/10
-                  bg-white/5
-                  p-8
-                  backdrop-blur-3xl
-                  lg:col-span-4
-                  flex
-                  flex-col
-                  justify-between
-                  transition-colors
-                  duration-500
-                  ease-out
-                  transform-gpu
-                  will-change-transform
-                  hover:border-cyan-400/40
-                "
-              >
-                {/* Hover Glow */}
-                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
-                  <div className="absolute -top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-[100px]" />
-                </div>
-
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-bold text-white">Live AI Signals</h4>
-                    <motion.div
-                      whileHover={{ rotate: 8 }}
-                      transition={{ duration: 0.4, ease: EASE }}
-                    >
-                      <BarChart3 className="h-5 w-5 text-cyan-400" />
-                    </motion.div>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-400">Real-time explainable insights</p>
-
-                  <div className="mt-6 space-y-4">
-                    {signals.length > 0 ? (
-                      signals.slice(0, 4).map((sig) => (
-                        <SignalRow
-                          key={sig.ticker}
-                          ticker={sig.ticker}
-                          signal={sig.action}
-                          score={String(Math.round(sig.score))}
-                        />
-                      ))
-                    ) : (
-                      <div className="py-8 text-center text-sm text-slate-500">
-                        No signals yet. Add holdings to your portfolio to see AI signals.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <motion.button
-                  onClick={() => onNavigateToTab?.("screener")}
-                  whileHover={{ scale: 1.02, transition: HOVER_SPRING }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400/30 transition"
-                >
-                  Explore Full Screener <ArrowUpRight className="h-4 w-4" />
-                </motion.button>
-
-                {/* Bottom Accent */}
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.45, ease: EASE }}
-                  className="absolute bottom-0 left-0 h-[2px] w-full origin-left bg-gradient-to-r from-cyan-400 to-blue-500"
-                />
-              </motion.div>
+              {/* Market Movers Card (Gains & Losses) */}
+              <MarketMoversCard onNavigateToTab={onNavigateToTab} />
             </div>
           </>
         )}

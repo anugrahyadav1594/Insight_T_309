@@ -553,3 +553,65 @@ export interface ChatReplyResponse {
   context_used: Record<string, unknown>;
   created_at: string;
 }
+
+// ─── IPO Calendar ────────────────────────────────────────────────────────────
+
+export type IPOStatus = "ongoing" | "upcoming" | "ended";
+
+export interface IpoItem {
+  id: string;
+  ticker: string;
+  name: string;
+  exchange: string;
+  sector?: string | null;
+  price_band_low?: number | null;
+  price_band_high?: number | null;
+  issue_size?: number | null;
+  open_date?: string | null;
+  close_date?: string | null;
+  listing_date?: string | null;
+  allotment_date?: string | null;
+  listing_open?: number | null;
+  listing_close?: number | null;
+  listing_gain_pct?: number | null;
+  status: IPOStatus;
+  description?: string | null;
+}
+
+export interface IpoSegment {
+  status: IPOStatus;
+  label: string;
+  count: number;
+  items: IpoItem[];
+}
+
+export interface IpoCalendarResponse {
+  generated_at: string;
+  ongoing: IpoSegment;
+  upcoming: IpoSegment;
+  ended: IpoSegment;
+}
+
+// ─── Market Movers (Gainers & Losers) ────────────────────────────────────────
+
+export type PeriodCode = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y";
+export type MoverDirection = "gainers" | "losers";
+
+export interface MoverItem {
+  ticker: string;
+  name: string;
+  exchange: string;
+  sector?: string | null;
+  price?: number | null;
+  change_pct?: number | null;
+  change?: number | null;
+  direction: string;
+  period: string;
+}
+
+export interface MoversResponse {
+  period: string;
+  direction: string;
+  count: number;
+  items: MoverItem[];
+}
