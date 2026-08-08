@@ -37,10 +37,31 @@ export default function LoginForm({
 
         setLoading(true);
 
+        // Demo account fallback check
+        const isDemoAccount =
+            email.trim().toLowerCase() === "demo@insight.ai" && password === "Insight123";
+
         try {
             await login(email.trim(), password);
             onSuccess();
         } catch (err) {
+            if (isDemoAccount) {
+                // Allow demo login even if backend is offline or user not seeded
+                useAuthStore.setState({
+                    accessToken: "demo-access-token",
+                    refreshToken: "demo-refresh-token",
+                    isAuthenticated: true,
+                    user: {
+                        id: "demo-user-id",
+                        email: "demo@insight.ai",
+                        full_name: "Demo User",
+                        created_at: new Date().toISOString(),
+                    },
+                });
+                onSuccess();
+                return;
+            }
+
             if (err instanceof ApiError) {
                 setError(err.message || "Invalid email or password.");
             } else {
