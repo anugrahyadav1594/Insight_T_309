@@ -29,7 +29,15 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [portfolioData, setPortfolioData] = useState<PortfolioSummary>(mockPortfolio);
-  const [holdingsData, setHoldingsData] = useState<Holding[]>(mockHoldings);
+  const [holdingsData, setHoldingsData] = useState<Holding[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("insight_user_portfolio_holdings");
+      if (saved) {
+        try { return JSON.parse(saved); } catch {}
+      }
+    }
+    return mockHoldings;
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -42,9 +50,6 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
         if (cancelled) return;
 
         if (list.items.length === 0) {
-          // No portfolios — fall back to mock data
-          setPortfolioData(mockPortfolio);
-          setHoldingsData(mockHoldings);
           setLoading(false);
           return;
         }
