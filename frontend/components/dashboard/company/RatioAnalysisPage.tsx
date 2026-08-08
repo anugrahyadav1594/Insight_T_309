@@ -6,6 +6,8 @@ import {
 } from "recharts";
 import StatusBadge from "./shared/StatusBadge";
 import AiAnalysisButton from "./shared/AiAnalysisButton";
+import { useMemo } from "react";
+import { getCompanyInfo } from "@/lib/companyData";
 import type { CompanyAnalysisResponse } from "@/lib/types";
 
 interface Props {
@@ -37,24 +39,28 @@ function RatioGroup({ title, ratios }: { title: string; ratios: Ratio[] }) {
 }
 
 export default function RatioAnalysisPage({ ticker, companyName, analysisData }: Props) {
+  const companyInfo = useMemo(() => getCompanyInfo(ticker), [ticker]);
   const raw = analysisData?.raw_data;
   const calc = analysisData?.calculated_metrics;
 
-  const gm = raw?.gross_margin != null ? Number(raw.gross_margin) * 100 : 33.8;
-  const om = raw?.operating_margin != null ? Number(raw.operating_margin) * 100 : 14.8;
-  const nm = raw?.net_margin != null ? Number(raw.net_margin) * 100 : 8.5;
-  const roe = raw?.roe != null ? Number(raw.roe) * 100 : 9.8;
-  const cr = raw?.current_ratio != null ? Number(raw.current_ratio) : 1.10;
-  const de = raw?.debt_to_equity != null ? Number(raw.debt_to_equity) : 0.60;
-  const ic = calc?.interest_coverage != null ? calc.interest_coverage : 8.2;
-  const qr = calc?.quick_ratio != null ? calc.quick_ratio : 0.82;
+  const gm = raw?.gross_margin != null ? Number(raw.gross_margin) * 100 : (companyInfo.financials ? parseFloat(companyInfo.financials.revenueGrowth) * 1.6 : 33.8);
+  const om = raw?.operating_margin != null ? Number(raw.operating_margin) * 100 : (gm * 0.55);
+  const nm = raw?.net_margin != null ? Number(raw.net_margin) * 100 : (gm * 0.35);
+  const roe = raw?.roe != null ? Number(raw.roe) * 100 : parseFloat(companyInfo.financials?.roe || "18");
+  const cr = raw?.current_ratio != null ? Number(raw.current_ratio) : 1.35;
+  const de = raw?.debt_to_equity != null ? Number(raw.debt_to_equity) : parseFloat(companyInfo.financials?.debtEquity || "0.2");
+  const ic = calc?.interest_coverage != null ? calc.interest_coverage : 12.5;
+  const qr = calc?.quick_ratio != null ? calc.quick_ratio : 1.15;
+
+  const baseRev = raw?.revenue ? Number(raw.revenue) : (companyInfo.price * 120);
+  const baseNet = raw?.net_income ? Number(raw.net_income) : (baseRev * (nm / 100));
 
   const revenueNetProfit = [
-    { year: "FY22", revenue: Math.round((raw?.revenue ? Number(raw.revenue) * 0.7 : 792690)), netProfit: Math.round((raw?.net_income ? Number(raw.net_income) * 0.7 : 60680)) },
-    { year: "FY23", revenue: Math.round((raw?.revenue ? Number(raw.revenue) * 0.8 : 888708)), netProfit: Math.round((raw?.net_income ? Number(raw.net_income) * 0.8 : 73672)) },
-    { year: "FY24", revenue: Math.round((raw?.revenue ? Number(raw.revenue) * 0.9 : 915644)), netProfit: Math.round((raw?.net_income ? Number(raw.net_income) * 0.9 : 79120)) },
-    { year: "FY25", revenue: Math.round((raw?.revenue ? Number(raw.revenue) : 1002300)), netProfit: Math.round((raw?.net_income ? Number(raw.net_income) : 84500)) },
-    { year: "FY26", revenue: Math.round((raw?.revenue ? Number(raw.revenue) * 1.08 : 1089000)), netProfit: Math.round((raw?.net_income ? Number(raw.net_income) * 1.09 : 92100)) },
+    { year: "FY22", revenue: Math.round(baseRev * 0.72), netProfit: Math.round(baseNet * 0.68) },
+    { year: "FY23", revenue: Math.round(baseRev * 0.81), netProfit: Math.round(baseNet * 0.79) },
+    { year: "FY24", revenue: Math.round(baseRev * 0.90), netProfit: Math.round(baseNet * 0.88) },
+    { year: "FY25", revenue: Math.round(baseRev), netProfit: Math.round(baseNet) },
+    { year: "FY26", revenue: Math.round(baseRev * 1.12), netProfit: Math.round(baseNet * 1.15) },
   ];
 
   const marginTrends = [
