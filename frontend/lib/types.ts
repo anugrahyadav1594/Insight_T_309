@@ -591,3 +591,27 @@ export interface IpoCalendarResponse {
   upcoming: IpoSegment;
   ended: IpoSegment;
 }
+
+// ─── Market Movers (Gainers & Losers) ────────────────────────────────────────
+
+export type PeriodCode = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y";
+export type MoverDirection = "gainers" | "losers";
+
+export interface MoverItem {
+  ticker: string;
+  name: string;
+  exchange: string;
+  sector?: string | null;
+  price?: number | null;
+  change_pct?: number | null;
+  change?: number | null;
+  direction: string;
+  period: string;
+}
+
+export interface MoversResponse {
+  period: string;
+  direction: string;
+  count: number;
+  items: MoverItem[];
+}
