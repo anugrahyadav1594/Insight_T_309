@@ -119,13 +119,13 @@ export default function RegisterForm({
                     } else {
                         setErrors({ form: err.message });
                     }
-                } else if (err.code === "CONFLICT") {
+                } else if (err.code === "EMAIL_ALREADY_REGISTERED" || err.code === "CONFLICT") {
                     setErrors({ email: "An account with this email already exists" });
                 } else {
                     setErrors({ form: err.message || "Registration failed. Please try again." });
                 }
             } else {
-                setErrors({ form: "Something went wrong. Please try again." });
+                setErrors({ form: "Could not connect to server. Please ensure the backend is running on http://localhost:9056." });
             }
         } finally {
             setIsLoading(false);
@@ -253,7 +253,11 @@ export default function RegisterForm({
 
             <Divider />
 
-            <GoogleButton />
+            <GoogleButton
+                onClick={() =>
+                    alert("Google Sign-In will be added with the backend.")
+                }
+            />
 
             <p className="text-center text-sm text-gray-400">
                 Already have an account?{" "}
