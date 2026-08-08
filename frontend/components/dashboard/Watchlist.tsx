@@ -49,7 +49,7 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
           if (item.signal) {
             const upper = item.signal.toUpperCase();
             if (upper.includes("BULL") || upper.includes("BUY")) signal = "Bullish";
-            else border: if (upper.includes("ACCUMULATE")) signal = "Accumulate";
+            else if (upper.includes("ACCUMULATE")) signal = "Accumulate";
             else if (upper.includes("BEAR")) signal = "Bearish";
           }
 
@@ -151,7 +151,7 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
           </div>
         )}
         <WatchlistHeader onBack={onBack} onAddStock={handleAddStock} />
-        
+
         {stocks.length > 0 ? (
           <>
             <WatchlistStats
