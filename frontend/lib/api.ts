@@ -86,6 +86,8 @@ async function request<T>(
         throw new ApiError(401, "DEMO_MODE", "Demo account mode active");
       }
       headers["Authorization"] = `Bearer ${token}`;
+    } else {
+      throw new ApiError(401, "UNAUTHORIZED", "Authentication required");
     }
   }
 
