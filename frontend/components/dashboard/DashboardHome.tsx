@@ -18,6 +18,7 @@ import {
 import { getDashboard } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import type { DashboardResponse } from "@/lib/types";
+import IpoCalendarCard from "./IpoCalendarCard";
 
 interface Props {
   onLanding: () => void;
@@ -230,90 +231,8 @@ export default function DashboardHome({ onLanding, onNavigateToTab }: Props) {
 
             {/* Main Workspace Grid */}
             <div className="mt-8 grid gap-8 lg:grid-cols-12">
-              {/* Main AI Stock Insight Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: EASE }}
-                whileHover={{
-                  y: -8,
-                  scale: 1.01,
-                  transition: HOVER_SPRING,
-                }}
-                className="
-                  group
-                  relative
-                  overflow-hidden
-                  rounded-[32px]
-                  border
-                  border-white/10
-                  bg-white/5
-                  p-8
-                  backdrop-blur-3xl
-                  lg:col-span-8
-                  shadow-2xl
-                  transition-colors
-                  duration-500
-                  ease-out
-                  transform-gpu
-                  will-change-transform
-                  hover:border-cyan-400/40
-                "
-              >
-                {/* Hover Glow */}
-                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
-                  <div className="absolute -top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-[100px]" />
-                </div>
-
-                <div className="relative flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
-                      Featured AI Recommendation
-                    </span>
-                    <h3 className="mt-1 text-2xl font-bold text-white">
-                      {featured ? `${featured.ticker} (${featured.name})` : "No featured insight yet"}
-                    </h3>
-                  </div>
-                  {featured && (
-                    <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-4 py-1.5 text-xs font-bold text-emerald-400">
-                      {featured.recommendation}
-                    </span>
-                  )}
-                </div>
-
-                <p className="relative mt-4 leading-7 text-slate-300">
-                  {featured?.ai_summary || "Create a portfolio and add holdings to get AI-powered recommendations and insights."}
-                </p>
-
-                <div className="relative mt-8 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors duration-300 hover:border-cyan-400/30">
-                    <div className="text-xs text-slate-400">Overall Score</div>
-                    <div className="mt-1 text-2xl font-bold text-cyan-400">
-                      {featured ? `${Math.round(featured.overall_score)} / 100` : "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors duration-300 hover:border-cyan-400/30">
-                    <div className="text-xs text-slate-400">Confidence</div>
-                    <div className="mt-1 text-2xl font-bold text-blue-400">
-                      {featured ? `${(featured.confidence * 100).toFixed(0)}%` : "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors duration-300 hover:border-cyan-400/30">
-                    <div className="text-xs text-slate-400">Holdings</div>
-                    <div className="mt-1 text-2xl font-bold text-emerald-400">
-                      {data ? data.portfolio_summary.holdings_count : "—"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Accent */}
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.45, ease: EASE }}
-                  className="absolute bottom-0 left-0 h-[2px] w-full origin-left bg-gradient-to-r from-cyan-400 to-blue-500"
-                />
-              </motion.div>
+              {/* IPO Intelligence Calendar Card */}
+              <IpoCalendarCard />
 
               {/* Right AI Signals / Watchlist Card */}
               <motion.div
