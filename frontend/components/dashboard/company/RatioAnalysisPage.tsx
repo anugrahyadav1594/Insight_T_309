@@ -1,38 +1,20 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   BarChart, Bar, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis,
   PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { Percent, TrendingUp } from "lucide-react";
+import { getCompanyInfo } from "@/lib/companyData";
 
-interface Props { ticker: string; companyName: string }
+import type { CompanyAnalysisResponse } from "@/lib/types";
 
-const chartData = {
-  revenueNetProfit: [
-    { year: "FY22", revenue: 792690, netProfit: 60680 },
-    { year: "FY23", revenue: 888708, netProfit: 73672 },
-    { year: "FY24", revenue: 915644, netProfit: 79120 },
-    { year: "FY25", revenue: 1002300, netProfit: 84500 },
-    { year: "FY26", revenue: 1089000, netProfit: 92100 },
-  ],
-  marginTrends: [
-    { year: "FY22", grossMargin: 32.0, operatingMargin: 14.0, netMargin: 8.4 },
-    { year: "FY23", grossMargin: 31.5, operatingMargin: 13.8, netMargin: 8.3 },
-    { year: "FY24", grossMargin: 33.2, operatingMargin: 14.5, netMargin: 8.6 },
-    { year: "FY25", grossMargin: 34.0, operatingMargin: 15.0, netMargin: 8.4 },
-    { year: "FY26", grossMargin: 33.8, operatingMargin: 14.8, netMargin: 8.5 },
-  ],
-  radarAxes: [
-    { subject: "ROE", value: 65, fullMark: 100 },
-    { subject: "Gross Margin", value: 55, fullMark: 100 },
-    { subject: "EBITDA", value: 60, fullMark: 100 },
-    { subject: "Efficiency", value: 50, fullMark: 100 },
-    { subject: "Low Debt", value: 70, fullMark: 100 },
-    { subject: "Liquidity", value: 40, fullMark: 100 },
-    { subject: "Net Margin", value: 45, fullMark: 100 },
-  ],
-};
+interface Props {
+  ticker: string;
+  companyName: string;
+  analysisData?: CompanyAnalysisResponse | null;
+}
 
 type RatioStatus = "Good" | "Fair" | "Poor";
 
@@ -42,23 +24,6 @@ interface RatioItem {
   value: string;
   status: RatioStatus;
 }
-
-const profitability: RatioItem[] = [
-  { id: "gm", title: "GROSS MARGIN", value: "25.58%", status: "Fair" },
-  { id: "em", title: "EBITDA MARGIN", value: "19.38%", status: "Fair" },
-  { id: "nm", title: "NET MARGIN", value: "7.64%", status: "Fair" },
-  { id: "roe", title: "ROE", value: "8.93%", status: "Fair" },
-];
-
-const liquidity: RatioItem[] = [
-  { id: "cr", title: "CURRENT RATIO", value: "1.10x", status: "Fair" },
-  { id: "qr", title: "QUICK RATIO", value: "0.79x", status: "Fair" },
-];
-
-const leverage: RatioItem[] = [
-  { id: "de", title: "DEBT/EQUITY", value: "0.44", status: "Good" },
-  { id: "ic", title: "INTEREST COVER", value: "5.05x", status: "Good" },
-];
 
 const statusDot: Record<RatioStatus, string> = {
   Good: "bg-emerald-400",
@@ -105,7 +70,59 @@ function ViewTrendButton() {
   );
 }
 
-export default function RatioAnalysisPage({ companyName }: Props) {
+export default function RatioAnalysisPage({ ticker, companyName }: Props) {
+  const companyInfo = useMemo(() => getCompanyInfo(ticker || "RELIANCE"), [ticker]);
+
+  const roeVal = parseFloat(companyInfo.financials?.roe || "18");
+  const revGrowthVal = parseFloat(companyInfo.financials?.revenueGrowth || "15");
+  const deVal = parseFloat(companyInfo.financials?.debtEquity || "0.2");
+  const basePrice = companyInfo.price;
+  const baseRev = Math.round(basePrice * 120);
+  const baseNet = Math.round(baseRev * 0.12);
+
+  const chartData = useMemo(() => ({
+    revenueNetProfit: [
+      { year: "FY22", revenue: Math.round(baseRev * 0.72), netProfit: Math.round(baseNet * 0.68) },
+      { year: "FY23", revenue: Math.round(baseRev * 0.81), netProfit: Math.round(baseNet * 0.79) },
+      { year: "FY24", revenue: Math.round(baseRev * 0.90), netProfit: Math.round(baseNet * 0.88) },
+      { year: "FY25", revenue: baseRev, netProfit: baseNet },
+      { year: "FY26", revenue: Math.round(baseRev * 1.12), netProfit: Math.round(baseNet * 1.15) },
+    ],
+    marginTrends: [
+      { year: "FY22", grossMargin: 31.0, operatingMargin: 13.5, netMargin: 8.0 },
+      { year: "FY23", grossMargin: 31.8, operatingMargin: 13.8, netMargin: 8.2 },
+      { year: "FY24", grossMargin: 32.5, operatingMargin: 14.2, netMargin: 8.4 },
+      { year: "FY25", grossMargin: 33.8, operatingMargin: 14.8, netMargin: 8.6 },
+      { year: "FY26", grossMargin: 34.2, operatingMargin: 15.2, netMargin: 8.9 },
+    ],
+    radarAxes: [
+      { subject: "ROE", value: Math.min(Math.round(roeVal * 2.5), 95), fullMark: 100 },
+      { subject: "Gross Margin", value: 65, fullMark: 100 },
+      { subject: "EBITDA", value: Math.min(Math.round(revGrowthVal * 3), 90), fullMark: 100 },
+      { subject: "Efficiency", value: 70, fullMark: 100 },
+      { subject: "Low Debt", value: Math.max(Math.round(100 - deVal * 60), 30), fullMark: 100 },
+      { subject: "Liquidity", value: 75, fullMark: 100 },
+      { subject: "Net Margin", value: 60, fullMark: 100 },
+    ],
+  }), [baseRev, baseNet, roeVal, revGrowthVal, deVal]);
+
+  const profitability: RatioItem[] = [
+    { id: "gm", title: "GROSS MARGIN", value: "33.80%", status: "Good" },
+    { id: "em", title: "EBITDA MARGIN", value: `${(revGrowthVal * 1.2).toFixed(2)}%`, status: "Good" },
+    { id: "nm", title: "NET MARGIN", value: "8.60%", status: "Fair" },
+    { id: "roe", title: "ROE", value: `${roeVal.toFixed(2)}%`, status: roeVal > 15 ? "Good" : "Fair" },
+  ];
+
+  const liquidity: RatioItem[] = [
+    { id: "cr", title: "CURRENT RATIO", value: "1.35x", status: "Good" },
+    { id: "qr", title: "QUICK RATIO", value: "1.10x", status: "Good" },
+  ];
+
+  const leverage: RatioItem[] = [
+    { id: "de", title: "DEBT/EQUITY", value: `${deVal}`, status: deVal < 0.5 ? "Good" : "Fair" },
+    { id: "ic", title: "INTEREST COVER", value: "8.50x", status: "Good" },
+  ];
+
   const tt = { background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#fff", fontSize: "12px" } as React.CSSProperties;
 
   return (
@@ -113,7 +130,7 @@ export default function RatioAnalysisPage({ companyName }: Props) {
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e1a] p-6">
           <h3 className="mb-1 text-lg font-semibold text-white">Revenue & Net Profit</h3>
-          <p className="mb-6 text-xs text-slate-500">Annual performance</p>
+          <p className="mb-6 text-xs text-slate-500">Annual performance for {companyName || companyInfo.name} (₹ Crores)</p>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData.revenueNetProfit} margin={{ top: 10, right: 10, bottom: 0, left: 0 }} barGap={4} barCategoryGap="20%">

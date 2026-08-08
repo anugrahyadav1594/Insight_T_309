@@ -245,6 +245,7 @@ export default function Navbar({
 
             {/* Navbar */}
             <motion.header
+                suppressHydrationWarning
                 initial={false}
                 animate={{ y: visible ? 0 : -82 }}
                 transition={{ type: "spring", stiffness: 380, damping: 34 }}

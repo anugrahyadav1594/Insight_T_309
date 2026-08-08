@@ -8,8 +8,15 @@ import {
 import { Compass, Sparkles } from "lucide-react";
 import MetricCard from "./shared/MetricCard";
 import TradingSignal from "./shared/TradingSignal";
+import { getCompanyInfo } from "@/lib/companyData";
+import { useMemo } from "react";
+import type { CompanyAnalysisResponse } from "@/lib/types";
 
-interface Props { ticker: string; companyName: string }
+interface Props {
+  ticker: string;
+  companyName: string;
+  analysisData?: CompanyAnalysisResponse | null;
+}
 
 const INDICATORS = [
   { id: "volume", label: "Volume", on: true },
@@ -159,11 +166,38 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
   const chartApiRef = useRef<IChartApi | null>(null);
   const macdRef = useRef<HTMLDivElement>(null);
   const rsiRef = useRef<HTMLDivElement>(null);
-  const d = tData[ticker] || tData.RELIANCE;
 
-  const { candleData, volumeData, ma50, ma200 } = generateOHLC(1334.80);
-  const { macdLine, signalLine, histogram } = generateMACD(candleData);
-  const rsiData = generateRSI(candleData);
+  const companyInfo = useMemo(() => getCompanyInfo(ticker || "RELIANCE"), [ticker]);
+  const basePrice = companyInfo.price;
+
+  const d = useMemo(() => {
+    if (tData[ticker?.toUpperCase()]) return tData[ticker.toUpperCase()];
+    return {
+      signal: companyInfo.recommendation.verdict.includes("Buy") ? "BUY" : "HOLD",
+      confidence: companyInfo.recommendation.score,
+      explanation: companyInfo.recommendation.summaryPoints,
+      keyLevels: {
+        high52w: Math.round(basePrice * 1.25 * 10) / 10,
+        low52w: Math.round(basePrice * 0.75 * 10) / 10,
+        avgVolume: "8.5M",
+        volatility: "24.2%",
+      },
+      oscillators: [
+        { title: "RSI (14)", value: "54.2", subtitle: "Relative Strength Index", status: "NEUTRAL", statusColor: "text-blue-400 border-blue-500/30 bg-blue-500/10", barColor: "#3b82f6", progress: 54.2 },
+        { title: "MACD", value: "14.20", subtitle: "Moving Average Convergence", status: "BULLISH", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", barColor: "#34d399" },
+        { title: "Stochastic", value: "64.8", subtitle: "14-Day Oscillator", status: "BULLISH", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", barColor: "#34d399", progress: 64.8 },
+      ],
+      trend: [
+        { title: "SMA 50", value: `₹${(basePrice * 0.96).toFixed(0)}`, subtitle: "+4.2% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 75 },
+        { title: "SMA 200", value: `₹${(basePrice * 0.91).toFixed(0)}`, subtitle: "+9.1% vs Current Price", status: "UPTREND", statusColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", progress: 72 },
+        { title: "ATR (14)", value: `${(basePrice * 0.015).toFixed(1)}`, subtitle: "Translates to 1.5% daily move", status: "VOLATILITY", statusColor: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
+      ],
+    };
+  }, [ticker, companyInfo, basePrice]);
+
+  const { candleData, volumeData, ma50, ma200 } = useMemo(() => generateOHLC(basePrice), [basePrice]);
+  const { macdLine, signalLine, histogram } = useMemo(() => generateMACD(candleData), [candleData]);
+  const rsiData = useMemo(() => generateRSI(candleData), [candleData]);
 
   // Main candlestick chart
   useEffect(() => {

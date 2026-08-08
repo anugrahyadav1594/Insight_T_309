@@ -28,7 +28,8 @@ export default function Hero({
     return (
         <section
             id="home"
-            className="relative overflow-hidden px-6 pt-24 pb-16"
+            suppressHydrationWarning
+            className="relative overflow-hidden pt-36 pb-24 md:pt-44 md:pb-32"
         >
             <div className="mx-auto max-w-7xl px-8">
                 {/* Top Header Row: Pill Badge only - removed arrows */}
