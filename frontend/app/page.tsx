@@ -101,7 +101,7 @@ export default function Home() {
     }
 
     return (
-        <main className="relative bg-[#050816] overflow-x-hidden min-h-screen" suppressHydrationWarning>
+        <main className="relative min-h-screen bg-[#070b14] font-sans text-slate-100 selection:bg-cyan-500/20 selection:text-cyan-300 overflow-x-hidden" suppressHydrationWarning>
             {/* Page-wide grid overlay */}
             <div
                 suppressHydrationWarning
