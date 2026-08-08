@@ -1,19 +1,27 @@
-FROM python:3.12-slim
+# INSIGHT backend — multi-stage, non-root (ARCHITECTURE.md §23.4)
+FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
+# System deps (minimal; argon2 needs libs if not using wheels).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-COPY app ./app
-COPY alembic ./alembic
-COPY scripts ./scripts
+# Non-root user
+RUN useradd --create-home --uid 1000 insight
+USER insight
 
-RUN useradd --create-home appuser
-USER appuser
+# Copy application
+COPY --chown=insight:insight . .
 
 EXPOSE 8000
 
