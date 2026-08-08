@@ -1,4 +1,4 @@
-"""Data access for ``users``."""
+"""Data access for ``users`` and ``oauth_accounts``."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
+from app.models.user import OAuthAccount, User
 from app.repositories.base import commit_refresh, get_by_id
 
 
@@ -16,7 +16,7 @@ async def create_user(
     session: AsyncSession,
     *,
     email: str,
-    password_hash: str,
+    password_hash: str | None,
     full_name: str,
 ) -> User:
     user = User(email=email, password_hash=password_hash, full_name=full_name, is_active=True)
@@ -36,3 +36,32 @@ async def get_user_by_id(session: AsyncSession, user_id: uuid.UUID) -> User | No
 async def touch_last_login(session: AsyncSession, user: User) -> None:
     user.last_login_at = datetime.now(timezone.utc)
     await session.commit()
+
+
+# -- OAuth accounts ----------------------------------------------------------
+async def get_oauth_account(
+    session: AsyncSession, provider: str, provider_user_id: str
+) -> OAuthAccount | None:
+    result = await session.execute(
+        select(OAuthAccount).where(
+            OAuthAccount.provider == provider,
+            OAuthAccount.provider_user_id == provider_user_id,
+        ).limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_oauth_account(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    provider: str,
+    provider_user_id: str,
+    email: str | None,
+) -> OAuthAccount:
+    acct = OAuthAccount(
+        user_id=user_id, provider=provider, provider_user_id=provider_user_id, email=email
+    )
+    session.add(acct)
+    await session.flush()
+    return acct

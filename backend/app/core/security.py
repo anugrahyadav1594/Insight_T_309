@@ -23,6 +23,9 @@ from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatc
 from .config import settings
 from .constants import TOKEN_TYPE_ACCESS
 
+# OAuth state token type marker.
+_TOKEN_TYPE_OAUTH_STATE = "oauth_state"
+
 _ph = PasswordHasher(time_cost=2, memory_cost=19 * 1024, parallelism=1)
 
 _ALGORITHM = "HS256"
@@ -99,6 +102,33 @@ def hash_refresh_token(raw_token: str) -> str:
 def token_expiry() -> datetime:
     """Compute the expiry timestamp for a new refresh token."""
     return datetime.now(timezone.utc) + timedelta(seconds=settings.refresh_token_ttl_seconds)
+
+
+# ---------------------------------------------------------------------------
+# OAuth state (CSRF) token — short-lived signed JWT used in the Google flow
+# ---------------------------------------------------------------------------
+def create_oauth_state(next_path: str | None = None) -> str:
+    """Create a short-lived signed ``state`` token for the Google OAuth flow."""
+    now = datetime.now(timezone.utc)
+    payload: dict[str, Any] = {
+        "type": _TOKEN_TYPE_OAUTH_STATE,
+        "jti": uuid.uuid4().hex,
+        "iat": now,
+        "exp": now + timedelta(minutes=10),
+        "next": next_path or "/",
+    }
+    return jwt.encode(payload, _secret(), algorithm=_ALGORITHM)
+
+
+def verify_oauth_state(state: str) -> dict[str, Any]:
+    """Verify and return the OAuth state payload.
+
+    Raises ``jwt.PyJWTError`` subclasses on invalid/expired state.
+    """
+    payload = jwt.decode(state, _secret(), algorithms=[_ALGORITHM])
+    if payload.get("type") != _TOKEN_TYPE_OAUTH_STATE:
+        raise jwt.InvalidTokenError("not an oauth state token")
+    return payload
 
 
 def new_family_id() -> uuid.UUID:
