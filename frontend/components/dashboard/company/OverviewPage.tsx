@@ -3,7 +3,7 @@ import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { Newspaper, Sparkles, Building2 } from "lucide-react";
-import { companyDataMap } from "@/lib/companyData";
+import { companyDataMap, getCompanyInfo } from "@/lib/companyData";
 import type { CompanyAnalysisResponse } from "@/lib/types";
 
 interface Props {
