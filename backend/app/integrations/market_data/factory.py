@@ -17,10 +17,13 @@ def get_market_data_provider() -> BaseMarketDataProvider:
     """Build the configured market-data provider."""
     from app.integrations.market_data.fmp_provider import FMPMarketDataProvider
     from app.integrations.market_data.mock_provider import MockMarketDataProvider
+    from app.integrations.market_data.yahoo_provider import YahooFinanceProvider
 
     provider_name = settings.MARKET_DATA_PROVIDER
     if provider_name == "mock":
         return MockMarketDataProvider()
+    if provider_name == "yahoo":
+        return YahooFinanceProvider()
     if provider_name == "fmp":
         if not settings.FMP_API_KEY and settings.REQUIRE_FMP_KEY:
             raise RuntimeError(

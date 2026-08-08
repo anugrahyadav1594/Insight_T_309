@@ -148,7 +148,7 @@ async def refresh_company_data(
         }
     )
     await company_repository.upsert_metrics(
-        db, company, metrics_row, data_as_of=now, source="fmp"
+        db, company, metrics_row, data_as_of=now, source=provider.name
     )
 
     price_bars = [(p.trade_date, p.open, p.high, p.low, p.close, p.volume) for p in prices]
@@ -185,7 +185,7 @@ async def refresh_company_data(
     return {
         "ticker": ticker,
         "data_as_of": now.isoformat(),
-        "source": "fmp",
+        "source": provider.name,
         "overall_score": overall.score,
         "recommendation": overall.recommendation,
     }

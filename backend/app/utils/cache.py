@@ -143,6 +143,14 @@ def portfolio_analysis_key(user_id: str, portfolio_id: str, payload_hash: str) -
     return f"portfolio:analysis:{user_id}:{portfolio_id}:{payload_hash}"
 
 
+def movers_key(period: str, direction: str, limit: int) -> str:
+    return f"movers:{period}:{direction}:{limit}"
+
+
+def ipos_key() -> str:
+    return "ipos:calendar"
+
+
 # TTL registry (seconds)
 TTLS = {
     "profile": settings.CACHE_TTL_PROFILE,
@@ -155,4 +163,6 @@ TTLS = {
     "dashboard": settings.CACHE_TTL_DASHBOARD,
     "screener": settings.CACHE_TTL_SCREENER,
     "portfolio_analysis": settings.CACHE_TTL_PORTFOLIO_ANALYSIS,
+    "movers": settings.CACHE_TTL_QUOTE,
+    "ipos": settings.CACHE_TTL_PROFILE,
 }

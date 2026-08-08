@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     # --- App -----------------------------------------------------------------
     APP_NAME: str = "INSIGHT"
-    ENVIRONMENT: Literal["development", "staging", "production"] = "development"
+    ENVIRONMENT: Literal["development", "staging", "production", "test"] = "development"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
 
@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     FMP_BASE_URL: str = "https://financialmodelingprep.com"
     FMP_TIMEOUT_SECONDS: float = 10.0
     FMP_MAX_RETRIES: int = 2
-    MARKET_DATA_PROVIDER: Literal["fmp", "mock"] = "fmp"
+    MARKET_DATA_PROVIDER: Literal["fmp", "mock", "yahoo"] = "fmp"
     # FMP plan-dependent features: "mock" disables the "no key at startup" hard fail.
     REQUIRE_FMP_KEY: bool = True
 
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.2
 
     # --- CORS -----------------------------------------------------------------
-    CORS_ORIGINS: str = "http://localhost:5513,http://127.0.0.1:5513,http://localhost:3000,http://127.0.0.1:3000"
+    CORS_ORIGINS: str = "http://localhost:5513,http://127.0.0.1:5513"
 
     # --- Rate limiting (slowapi + Redis) ---------------------------------------
     RATE_LIMIT_DEFAULT_PER_MINUTE: int = 120
@@ -101,9 +101,9 @@ class Settings(BaseSettings):
     @field_validator("JWT_SECRET_KEY")
     @classmethod
     def _validate_jwt_secret(cls, v: str, info) -> str:
-        # Only enforce presence for non-test, non-mock environments.
+        # Fail fast in production when the secret is missing.
         env = info.data.get("ENVIRONMENT")
-        if not v and env != "development":
+        if not v and env == "production":
             raise ValueError("JWT_SECRET_KEY is required and must be a strong secret")
         return v
 

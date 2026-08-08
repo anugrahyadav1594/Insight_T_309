@@ -51,6 +51,24 @@ async def top_by_score(session: AsyncSession, limit: int = 20) -> list[Company]:
     return list(result.scalars().all())
 
 
+async def list_companies_with_prices(
+    session: AsyncSession, max_bars: int = 300
+) -> list[Company]:
+    """Return enabled companies with their price history preloaded (for movers)."""
+    result = await session.execute(
+        select(Company)
+        .where(Company.is_enabled.is_(True))
+        .options(selectinload(Company.metrics), selectinload(Company.prices))
+    )
+    companies = list(result.scalars().all())
+    # Trim each company's prices to the most recent max_bars (ascending).
+    for c in companies:
+        if c.prices:
+            ordered = sorted(c.prices, key=lambda p: p.trade_date, reverse=True)[:max_bars]
+            c.prices = list(reversed(ordered))
+    return companies
+
+
 async def get_metrics(session: AsyncSession, company_id: uuid.UUID) -> CompanyMetrics | None:
     result = await session.execute(
         select(CompanyMetrics).where(CompanyMetrics.company_id == company_id).limit(1)

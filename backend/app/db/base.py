@@ -14,6 +14,7 @@ from app.models import (
     watchlist,  # noqa: F401
     ai,  # noqa: F401
     screener,  # noqa: F401
+    ipo,  # noqa: F401
 )
 
 __all__ = ["Base"]

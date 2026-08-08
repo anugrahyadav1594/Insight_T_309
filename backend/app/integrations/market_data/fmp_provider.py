@@ -5,7 +5,13 @@ This file (and ``client.py``) are the ONLY place the app knows FMP exists
 schemas, then validated with Pydantic before it can reach the database.
 
 Endpoint availability depends on the purchased FMP plan; mappings are defensive
-(``None`` when a field is absent). See ``docs/ADR.md`` for integration notes.
+(``None`` when a field is absent).
+
+NOTE (2026): FMP retired the legacy ``/api/v3/...`` endpoints (Aug 2025). The
+current API uses the ``/stable/...`` base path with ``?symbol=`` query params.
+This provider targets the stable API. The free ("Starter") plan is US-centric;
+Indian (NSE/BSE) tickers may not return data on the free tier — the refresh path
+degrades gracefully to seed data in that case (see docs/ADR.md).
 """
 
 from __future__ import annotations
@@ -65,7 +71,7 @@ def _int(obj: dict[str, Any], key: str) -> int | None:
 
 
 class FMPMarketDataProvider(BaseMarketDataProvider):
-    """Primary provider backed by the FMP REST API."""
+    """Primary provider backed by the FMP stable REST API."""
 
     name = "fmp"
 
@@ -74,7 +80,7 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
 
     # -- profile ---------------------------------------------------------------
     async def get_profile(self, ticker: str) -> NormalizedCompanyProfile:
-        data = await self._client.get(f"/api/v3/profile/{ticker.upper()}")
+        data = await self._client.get("/stable/profile", {"symbol": ticker.upper()})
         row = self._first(data)
         try:
             return NormalizedCompanyProfile(
@@ -92,7 +98,7 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
 
     # -- quote ------------------------------------------------------------------
     async def get_quote(self, ticker: str) -> NormalizedQuote:
-        data = await self._client.get(f"/api/v3/quote/{ticker.upper()}")
+        data = await self._client.get("/stable/quote", {"symbol": ticker.upper()})
         row = self._first(data)
         try:
             return NormalizedQuote(
@@ -102,7 +108,7 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
                 day_change=_num(row, "change"),
                 day_change_pct=_num(row, "changesPercentage"),
                 volume=_int(row, "volume"),
-                avg_volume=_int(row, "avgVolume"),
+                avg_volume=_int(row, "avgVolume") or _int(row, "averageVolume"),
                 market_cap=_num(row, "marketCap"),
                 high_52w=_num(row, "yearHigh"),
                 low_52w=_num(row, "yearLow"),
@@ -114,7 +120,7 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
     # -- metrics ----------------------------------------------------------------
     async def get_metrics(self, ticker: str) -> NormalizedMetrics:
         ratios = await self._client.get(
-            f"/api/v3/ratios/{ticker.upper()}", {"period": "annual", "limit": 5}
+            "/stable/ratios", {"symbol": ticker.upper(), "period": "annual", "limit": 5}
         )
         row = self._first(ratios)
         try:
@@ -137,13 +143,13 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
             )
         except ValidationError as exc:
             raise FMPInvalidResponseError(f"Invalid ratios payload: {exc}") from exc
-        self._merge_key_metrics(ticker, metrics)
+        await self._merge_key_metrics(ticker, metrics)
         return metrics
 
     async def _merge_key_metrics(self, ticker: str, metrics: NormalizedMetrics) -> None:
         try:
             data = await self._client.get(
-                f"/api/v3/key-metrics/{ticker.upper()}", {"period": "annual", "limit": 5}
+                "/stable/key-metrics", {"symbol": ticker.upper(), "period": "annual", "limit": 5}
             )
         except Exception:  # key-metrics is optional on some plans — degrade gracefully.
             return
@@ -167,14 +173,14 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
     async def get_financial_statements(
         self, ticker: str, period: str = "annual", limit: int = 5
     ) -> list[NormalizedFinancialStatements]:
-        params = {"period": period, "limit": limit}
-        income = await self._client.get(f"/api/v3/income-statement/{ticker.upper()}", params)
+        params = {"symbol": ticker.upper(), "period": period, "limit": limit}
+        income = await self._client.get("/stable/income-statement", params)
         try:
-            balance = await self._client.get(f"/api/v3/balance-sheet-statement/{ticker.upper()}", params)
+            balance = await self._client.get("/stable/balance-sheet-statement", params)
         except FMPDataUnavailableError:
             balance = []
         try:
-            cashflow = await self._client.get(f"/api/v3/cash-flow-statement/{ticker.upper()}", params)
+            cashflow = await self._client.get("/stable/cash-flow-statement", params)
         except FMPDataUnavailableError:
             cashflow = []
 
@@ -232,17 +238,27 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
     async def get_price_history(
         self, ticker: str, period: str = "1y"
     ) -> list[NormalizedPriceBar]:
-        data = await self._client.get(f"/api/v3/historical-price-full/{ticker.upper()}")
-        historical = data.get("historical") if isinstance(data, dict) else []
-        if not historical:
-            return []
+        data = await self._client.get(
+            "/stable/historical-price-eod/light", {"symbol": ticker.upper()}
+        )
+        # The stable "light" endpoint returns a list of bars directly, but be
+        # defensive: also accept a {"symbol":..., "historical":[...]} shape.
+        if isinstance(data, dict):
+            bars_data = data.get("historical") or data.get("prices") or []
+        elif isinstance(data, list):
+            bars_data = data
+        else:
+            bars_data = []
+
         bars: list[NormalizedPriceBar] = []
-        for item in historical[:260]:
+        for item in bars_data[:260]:
+            if not isinstance(item, dict):
+                continue
             try:
                 bars.append(
                     NormalizedPriceBar(
                         ticker=ticker,
-                        trade_date=date.fromisoformat(item.get("date")),
+                        trade_date=date.fromisoformat(str(item.get("date"))),
                         open=_num(item, "open") or Decimal("0"),
                         high=_num(item, "high") or Decimal("0"),
                         low=_num(item, "low") or Decimal("0"),
@@ -252,13 +268,21 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
                 )
             except ValidationError as exc:
                 raise FMPInvalidResponseError(f"Invalid price-bar payload: {exc}") from exc
+            except ValueError:
+                continue
         return bars
 
     # -- search -------------------------------------------------------------------
     async def search(self, query: str, limit: int = 10) -> list[NormalizedSearchHit]:
-        data = await self._client.get("/api/v3/search", {"query": query, "limit": limit})
+        data = await self._client.get(
+            "/stable/search-symbol", {"query": query, "limit": limit}
+        )
+        if not isinstance(data, list):
+            data = []
         hits: list[NormalizedSearchHit] = []
         for row in data:
+            if not isinstance(row, dict):
+                continue
             try:
                 hits.append(
                     NormalizedSearchHit(
@@ -278,10 +302,12 @@ class FMPMarketDataProvider(BaseMarketDataProvider):
     async def health_check(self) -> ProviderHealth:
         # Lightweight, quota-friendly probe: try one profile fetch for a known symbol.
         try:
-            data = await self._client.get("/api/v3/profile/TCS")
+            data = await self._client.get("/stable/profile", {"symbol": "AAPL"})
             if not data:
                 return ProviderHealth(status="degraded", message="no profile data")
             return ProviderHealth(status="available")
+        except FMPDataUnavailableError:
+            return ProviderHealth(status="degraded", message="symbol not available")
         except Exception:
             return ProviderHealth(status="unavailable")
 

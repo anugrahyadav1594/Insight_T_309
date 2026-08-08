@@ -271,6 +271,60 @@ _COMPANIES: list[tuple[str, str, str, str, float, float, dict]] = [
 
 
 
+_IPOS: list[dict] = [
+    {
+        "ticker": "GOCOLORS", "name": "Go Colors", "exchange": "NSE", "sector": "Consumer Discretionary",
+        "price_band_low": 111, "price_band_high": 115, "issue_size": 1162,
+        "open_date": None, "close_date": None,
+        "listing_date": date(2026, 8, 12), "allotment_date": date(2026, 8, 9),
+        "listing_open": 125, "listing_close": 130, "listing_gain_pct": 13.0,
+        "description": "Upcoming fashion retail IPO.",
+    },
+    {
+        "ticker": "RADICO", "name": "Radico Khaitan", "exchange": "NSE", "sector": "Consumer Staples",
+        "price_band_low": 250, "price_band_high": 260, "issue_size": 2100,
+        "open_date": None, "close_date": None,
+        "listing_date": date(2026, 9, 2), "allotment_date": date(2026, 8, 28),
+        "listing_open": None, "listing_close": None, "listing_gain_pct": None,
+        "description": "Coming up in the near future.",
+    },
+    {
+        "ticker": "VPRPL", "name": "Vishnu Prakash R Punglia", "exchange": "NSE", "sector": "Industrials",
+        "price_band_low": 95, "price_band_high": 99, "issue_size": 308,
+        "open_date": date(2026, 8, 6), "close_date": date(2026, 8, 8),
+        "listing_date": date(2026, 8, 14), "allotment_date": date(2026, 8, 10),
+        "listing_open": None, "listing_close": None, "listing_gain_pct": None,
+        "description": "Currently open for bidding.",
+    },
+    {
+        "ticker": "SWIGGY", "name": "Swiggy", "exchange": "NSE", "sector": "Consumer Discretionary",
+        "price_band_low": 340, "price_band_high": 345, "issue_size": 11327,
+        "open_date": date(2026, 7, 25), "close_date": date(2026, 7, 27),
+        "listing_date": date(2026, 8, 1), "allotment_date": date(2026, 7, 29),
+        "listing_open": 360, "listing_close": 368, "listing_gain_pct": 6.7,
+        "description": "Recently listed food-delivery platform.",
+    },
+]
+
+
+async def _seed_ipos(db: AsyncSession) -> None:
+    from app.repositories import ipo_repository
+
+    await ipo_repository.delete_all(db)
+    for spec in _IPOS:
+        await ipo_repository.upsert_ipo(
+            db,
+            ticker=spec["ticker"], name=spec["name"], exchange=spec["exchange"],
+            sector=spec["sector"], price_band_low=spec["price_band_low"],
+            price_band_high=spec["price_band_high"], issue_size=spec["issue_size"],
+            open_date=spec["open_date"], close_date=spec["close_date"],
+            listing_date=spec["listing_date"], allotment_date=spec["allotment_date"],
+            listing_open=spec["listing_open"], listing_close=spec["listing_close"],
+            listing_gain_pct=spec["listing_gain_pct"], description=spec["description"],
+        )
+    await db.flush()
+
+
 def _generate_prices(ticker: str, base_price: float, days: int = 250) -> list[CompanyPrice]:
     import random
 
@@ -433,6 +487,8 @@ async def seed_database(db: AsyncSession, *, create_demo_user: bool = True) -> i
             db.add(st)
         count += 1
 
+    await _seed_ipos(db)
+
     if create_demo_user:
         await _seed_demo_user(db)
 
@@ -452,7 +508,6 @@ async def _seed_demo_user(db: AsyncSession) -> None:
         password_hash=security.hash_password("Demo@12345"),
         full_name="Demo Investor",
     )
-    
     portfolio = Portfolio(user_id=user.id, name="Long-term", description="Demo portfolio")
     db.add(portfolio)
     watchlist = Watchlist(user_id=user.id, name="Watchlist")

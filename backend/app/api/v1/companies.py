@@ -11,7 +11,9 @@ from app.db.session import get_db
 from app.integrations.market_data.base import BaseMarketDataProvider
 from app.schemas.common import SuccessEnvelope, ok
 from app.schemas.company import AnalysisResponse, CompanySearchResponse
+from app.schemas.movers import MoversResponse
 from app.services.company_service import company_service
+from app.services.movers_service import movers_service
 
 router = APIRouter(prefix="/companies", tags=["companies"], dependencies=[Depends(get_current_user)])
 
@@ -42,3 +44,15 @@ async def get_analysis(
 ) -> dict:
     analysis = await company_service.get_analysis(db, provider, llm, ticker)
     return ok(analysis)
+
+
+@router.get("/movers/list", response_model=SuccessEnvelope[MoversResponse])
+async def get_movers(
+    period: str = Query(default="1D"),
+    direction: str | None = Query(default=None),
+    limit: int = Query(default=10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Top gainers/losers over a period (1D, 1W, 1M, 3M, 6M, 1Y)."""
+    result = await movers_service.movers(db, period=period, direction=direction, limit=limit)
+    return ok(result)
