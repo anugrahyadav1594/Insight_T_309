@@ -24,3 +24,21 @@ Thumbs.db
 # ---- Docker volumes ----
 pg_data/
 redis_data/
+
+# ---- Frontend / Next.js ----
+
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# ---- Frontend / TypeScript ----
+
+frontend/*.tsbuildinfo
+
+# ---- Frontend environment ----
+
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
