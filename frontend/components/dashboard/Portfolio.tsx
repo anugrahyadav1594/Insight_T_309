@@ -10,6 +10,7 @@ import HoldingsTable from "./portfolio/HoldingsTable";
 import HoldingsChart from "./portfolio/HoldingsChart";
 import AIAnalysisButton from "./portfolio/AIAnalysisButton";
 import AIAnalysisModal from "./portfolio/AIAnalysisModal";
+import PortfolioOnboarding from "./portfolio/PortfolioOnboarding";
 
 import {
   portfolio as mockPortfolio,
@@ -85,6 +86,9 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [realHoldings, setRealHoldings] = useState<HoldingOut[]>([]);
 
+  /* True when the user has no portfolios yet (Google login, first time). */
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
   /* What-if simulation. */
   const [whatIfMode, setWhatIfMode] = useState(false);
   const [editRows, setEditRows] = useState<EditRow[]>([]);
@@ -103,7 +107,11 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
       try {
         const list = await listPortfolios();
         if (cancelled) return;
-        if (list.items.length === 0) { setLoading(false); return; }
+        if (list.items.length === 0) {
+          setNeedsOnboarding(true);
+          setLoading(false);
+          return;
+        }
 
         const detail = await getPortfolio(list.items[0].id);
         if (cancelled) return;
@@ -143,6 +151,27 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
     () => displayHoldings.reduce((sum, h) => sum + h.current * h.qty, 0),
     [displayHoldings],
   );
+
+  /* After a user creates their first portfolio, reload it. */
+  const handlePortfolioCreated = useCallback(() => {
+    setNeedsOnboarding(false);
+    // Reload the portfolio list + first portfolio.
+    (async () => {
+      try {
+        const list = await listPortfolios();
+        if (list.items.length === 0) { setNeedsOnboarding(true); return; }
+        const detail = await getPortfolio(list.items[0].id);
+        setPortfolioId(detail.id);
+        setRealHoldings(detail.holdings);
+        setPortfolioData(mapDetailToSummary(detail));
+        const mapped = mapDetailToHoldings(detail);
+        setHoldingsData(mapped.length > 0 ? mapped : mockHoldings);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load portfolio");
+      }
+    })();
+  }, []);
 
   const enterWhatIf = useCallback(() => {
     setEditRows(
@@ -222,6 +251,23 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
       <div className="relative min-h-screen px-6 pt-24 pb-20 text-white flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
         <p className="text-sm text-slate-400">Loading portfolio...</p>
+      </div>
+    );
+  }
+
+  if (needsOnboarding) {
+    return (
+      <div className="relative min-h-screen px-6 pt-24 pb-20 text-white">
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute left-1/4 top-20 h-96 w-96 rounded-full bg-cyan-500/10 blur-[160px]" />
+          <div className="absolute right-1/4 top-60 h-96 w-96 rounded-full bg-blue-600/10 blur-[160px]" />
+        </div>
+        <div className="mx-auto max-w-7xl px-8">
+          <PortfolioHeader onBack={onBack} />
+          <div className="mt-10 flex justify-center">
+            <PortfolioOnboarding onCreated={handlePortfolioCreated} />
+          </div>
+        </div>
       </div>
     );
   }
