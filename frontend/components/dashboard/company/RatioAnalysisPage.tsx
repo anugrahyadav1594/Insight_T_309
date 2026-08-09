@@ -191,7 +191,7 @@ const CustomFloatingTooltip = ({ active, payload, label, unit }: any) => {
   );
 };
 
-export default function RatioAnalysisPage({ ticker, companyName }: Props) {
+export default function RatioAnalysisPage({ ticker, companyName, analysisData }: Props) {
   const [isLightMode, setIsLightMode] = useState(false);
 
   useEffect(() => {
