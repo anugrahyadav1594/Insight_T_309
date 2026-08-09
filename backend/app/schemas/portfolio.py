@@ -5,13 +5,15 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
+
 class PortfolioCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    description: str | None = Field(default=None, max_length=1000)
+    name: str = Field(min_length=1, max_length=100, examples=["Long-term"])
+    description: str | None = Field(default=None, max_length=1000, examples=["My demo portfolio"])
 
     model_config = ConfigDict(extra="forbid")
 
@@ -26,9 +28,9 @@ class PortfolioOut(BaseModel):
 
 
 class HoldingCreate(BaseModel):
-    ticker: str = Field(min_length=1, max_length=20)
-    quantity: Decimal = Field(gt=0)
-    average_buy_price: Decimal = Field(gt=0)
+    ticker: str = Field(min_length=1, max_length=20, examples=["TCS"])
+    quantity: Decimal = Field(gt=0, examples=[Decimal("100")])
+    average_buy_price: Decimal = Field(gt=0, examples=[Decimal("3400.00")])
 
     model_config = ConfigDict(extra="forbid")
 
@@ -109,5 +111,28 @@ class PortfolioListResponse(BaseModel):
 
 class PortfolioAnalyzeRequest(BaseModel):
     focus: str | None = Field(default=None, max_length=50)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class WhatIfHolding(BaseModel):
+    """A hypothetical holding change for the 'What if' simulator.
+
+    ``action``: add = add a new holding, update = change qty/price of an
+    existing holding (matched by ticker), remove = drop an existing holding.
+    """
+
+    ticker: str = Field(min_length=1, max_length=20)
+    quantity: Decimal | None = Field(default=None, gt=0)
+    average_buy_price: Decimal | None = Field(default=None, gt=0)
+    action: Literal["add", "update", "remove"] = "add"
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class WhatIfRequest(BaseModel):
+    """The set of hypothetical changes to apply for the 'What if' simulation."""
+
+    holdings: list[WhatIfHolding] = []
 
     model_config = ConfigDict(extra="forbid")

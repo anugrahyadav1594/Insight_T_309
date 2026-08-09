@@ -174,6 +174,144 @@ class PortfolioService:
             raise HoldingNotFoundError()
         await portfolio_repository.delete_holding(db, holding)
 
+    async def what_if(
+        self,
+        db: AsyncSession,
+        user_id: uuid.UUID,
+        portfolio_id: uuid.UUID,
+        holdings_changes: list[Any],
+    ) -> PortfolioDetail:
+        """Compute portfolio metrics/scores for a hypothetical ("What if") set of
+        holdings without persisting anything.
+
+        The user's real holdings are loaded, the hypothetical changes (add /
+        update / remove) are applied in memory, and the deterministic portfolio
+        engine recomputes summary, concentration and weighted scores.
+        """
+        from app.schemas.portfolio import WhatIfHolding
+
+        portfolio = await self._get_owned(db, user_id, portfolio_id)
+        real_holdings = portfolio.holdings
+
+        # Build an in-memory working set keyed by ticker.
+        # Each entry: {company_id, ticker, name, sector, quantity, average_buy_price}
+        working: dict[str, dict[str, Any]] = {}
+        for h in real_holdings:
+            company = await company_repository.get_company_by_id(db, h.company_id)
+            if company is None:
+                continue
+            working[company.ticker.upper()] = {
+                "company_id": h.company_id,
+                "ticker": company.ticker.upper(),
+                "name": company.name,
+                "sector": company.sector,
+                "quantity": float(h.quantity),
+                "average_buy_price": float(h.average_buy_price),
+            }
+
+        # Apply hypothetical changes.
+        for change in holdings_changes:
+            ch: WhatIfHolding = (
+                change if isinstance(change, WhatIfHolding) else WhatIfHolding(**change)
+            )
+            ticker = ch.ticker.upper()
+            if ch.action == "remove":
+                working.pop(ticker, None)
+                continue
+            if ticker in working:
+                row = working[ticker]
+                if ch.quantity is not None:
+                    row["quantity"] = float(ch.quantity)
+                if ch.average_buy_price is not None:
+                    row["average_buy_price"] = float(ch.average_buy_price)
+            else:
+                # New holding — need the company to get name/sector/scores.
+                company = await company_repository.get_company_by_ticker(db, ticker)
+                if company is None:
+                    continue
+                working[ticker] = {
+                    "company_id": company.id,
+                    "ticker": company.ticker.upper(),
+                    "name": company.name,
+                    "sector": company.sector,
+                    "quantity": float(ch.quantity or 0),
+                    "average_buy_price": float(ch.average_buy_price or 0),
+                }
+
+        # Build the hypothetical detail from the working set.
+        return await self._build_detail_from_rows(db, list(working.values()), portfolio)
+
+    async def _build_detail_from_rows(
+        self,
+        db: AsyncSession,
+        rows: list[dict[str, Any]],
+        portfolio: Any,
+    ) -> PortfolioDetail:
+        """Build a PortfolioDetail from in-memory holding rows (no DB persistence)."""
+        enriched: list[dict[str, Any]] = []
+        total_value = 0.0
+        for row in rows:
+            company_id = row.get("company_id")
+            metrics = None
+            if company_id:
+                company = await company_repository.get_company_by_id(db, company_id)
+                metrics = company.metrics if company else None
+            price = float(metrics.price) if metrics and metrics.price is not None else float(row["average_buy_price"])
+            math = compute_holding_math(row["quantity"], row["average_buy_price"], price)
+            total_value += math["current_value"]
+            enriched.append(
+                {
+                    "id": uuid.uuid4(),  # hypothetical holding has no DB id
+                    "ticker": row["ticker"],
+                    "name": row.get("name", row["ticker"]),
+                    "sector": row.get("sector"),
+                    "quantity": row["quantity"],
+                    "average_buy_price": row["average_buy_price"],
+                    "price": price,
+                    **math,
+                    "fundamental_score": float(metrics.fundamental_score) if metrics and metrics.fundamental_score is not None else None,
+                    "technical_score": float(metrics.technical_score) if metrics and metrics.technical_score is not None else None,
+                    "risk_score": float(metrics.risk_score) if metrics and metrics.risk_score is not None else None,
+                    "overall_score": float(metrics.overall_score) if metrics and metrics.overall_score is not None else None,
+                    "recommendation": (metrics.recommendation.upper() if metrics and metrics.recommendation else None),
+                }
+            )
+        for row in enriched:
+            row["weight"] = round(row["current_value"] / total_value * 100.0, 4) if total_value else 0.0
+
+        summary = PortfolioSummary(**compute_portfolio_summary(
+            [{"invested_value": h["invested_value"], "current_value": h["current_value"]} for h in enriched]
+        ))
+        concentration = compute_sector_concentration(
+            [{"sector": h["sector"], "current_value": h["current_value"]} for h in enriched]
+        )
+        weighted = compute_weighted_scores([
+            {
+                "ticker": h["ticker"], "current_value": h["current_value"],
+                "fundamental_score": h.get("fundamental_score"),
+                "technical_score": h.get("technical_score"),
+                "risk_score": h.get("risk_score"),
+                "overall_score": h.get("overall_score"),
+            } for h in enriched
+        ])
+        scores = PortfolioScores(
+            fundamental=weighted.get("fundamental"),
+            technical=weighted.get("technical"),
+            risk=weighted.get("risk"),
+            overall=weighted.get("overall"),
+            confidence=weighted.get("confidence", 0.0),
+        )
+        return PortfolioDetail(
+            id=portfolio.id,
+            name=portfolio.name,
+            description=portfolio.description,
+            created_at=portfolio.created_at,
+            summary=summary,
+            sector_concentration=[SectorConcentration(**c) for c in concentration],
+            scores=scores,
+            holdings=[HoldingOut(**h) for h in enriched],
+        )
+
     async def analyze(
         self,
         db: AsyncSession,

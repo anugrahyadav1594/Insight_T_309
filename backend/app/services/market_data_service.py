@@ -84,7 +84,10 @@ class MarketDataService:
 
         # DB-second: fresh persisted data.
         if company is not None and company.metrics is not None and not force_refresh:
-            if _is_fresh(company.metrics.data_as_of):
+            # Auto-refresh a company that was seeded but never synced from the
+            # provider, so the first read returns real live data (not dummy seed).
+            never_synced = company.data_status == "seeded" and settings.AUTO_REFRESH_FORCE_SEEDED
+            if _is_fresh(company.metrics.data_as_of) and not never_synced:
                 return _bundle(company, company.metrics, stale=False)
 
         # Provider-last: refresh.

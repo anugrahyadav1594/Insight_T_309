@@ -49,9 +49,31 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
 
 def _nse_suffix(ticker: str) -> str:
-    """Append Yahoo's NSE suffix if the ticker isn't already suffixed."""
+    """Append Yahoo's NSE suffix if the ticker isn't already suffixed.
+
+    A small alias map handles seed tickers whose Yahoo symbol differs from the
+    naive ``{TICKER}.NS`` form. Tickers with no Yahoo listing (empty mapping)
+    are handled by the caller (they resolve to an empty/invalid symbol and the
+    provider raises an unavailable error, which the refresh path degrades on).
+    """
+    # Seed ticker -> correct Yahoo symbol. Entries mapping to "" mean "no Yahoo
+    # listing" (skipped gracefully by refresh).
+    ALIASES = {
+        # These seed tickers have no active NSE listing on Yahoo's chart API;
+        # leaving them empty means the provider skips them gracefully and keeps
+        # seed data rather than spamming 404 warnings.
+        "TATAMOTORS": "",
+        "LTIM": "",
+        "ZOMATO": "",
+        # Indian stocks whose Yahoo symbol differs from the naive form go here:
+        # e.g. "TATAMOTORS": "TATAMOTOR.NS" (if it ever becomes active again).
+    }
     t = ticker.upper()
-    return t if "." in t else f"{t}.NS"
+    if "." in t:
+        return t
+    if t in ALIASES:
+        return ALIASES[t]
+    return f"{t}.NS"
 
 
 def _app_ticker(symbol: str) -> str:
@@ -143,6 +165,8 @@ class YahooFinanceProvider(BaseMarketDataProvider):
 
     async def _chart(self, ticker: str, range_: str = "1y", interval: str = "1d") -> dict[str, Any]:
         symbol = _nse_suffix(ticker)
+        if not symbol:
+            raise FMPDataUnavailableError(f"yahoo: no listing for ticker {ticker}")
         url = f"{QUOTE_URL}/{symbol}"
         params = {"range": range_, "interval": interval}
         headers = {"User-Agent": USER_AGENT}
