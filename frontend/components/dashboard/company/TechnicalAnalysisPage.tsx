@@ -516,8 +516,6 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
   const priceDiff = activeClose - activeOpen;
   const priceDiffPct = activeOpen ? (priceDiff / activeOpen) * 100 : 0;
 
-  const [timeframe, setTimeframe] = useState("1Y");
-
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
