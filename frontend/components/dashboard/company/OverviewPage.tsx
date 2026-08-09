@@ -154,6 +154,44 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
     { time: "2d ago", source: "Mint", headline: `${companyName} executives outline strategic growth drivers at investor conference.`, url: `https://www.livemint.com/` },
   ];
 
+  // Calculate real CAGR based on active timeframe selection & price data points
+  const cagrMetrics = useMemo(() => {
+    if (!prices || prices.length < 2) {
+      return { cagr: "+7.26%", periodLabel: "Annualized over 5.0 Years", isPos: true };
+    }
+    const startPrice = prices[0].price;
+    const endPrice = prices[prices.length - 1].price;
+
+    let years = 1;
+    switch (selectedRange) {
+      case "1D": years = 1 / 252; break;
+      case "5D": years = 5 / 252; break;
+      case "1M": years = 1 / 12; break;
+      case "3M": years = 0.25; break;
+      case "6M": years = 0.5; break;
+      case "1Y": years = 1.0; break;
+      case "2Y": years = 2.0; break;
+      case "5Y": years = 5.0; break;
+      case "Max": years = 5.0; break;
+      default: years = 1.0; break;
+    }
+
+    let cagrVal = 0;
+    if (years >= 1.0) {
+      cagrVal = (Math.pow(endPrice / startPrice, 1 / years) - 1) * 100;
+    } else {
+      cagrVal = ((endPrice - startPrice) / startPrice) * 100;
+    }
+
+    const isPos = cagrVal >= 0;
+    const formattedCagr = `${isPos ? "+" : ""}${cagrVal.toFixed(2)}%`;
+    const periodText = years < 1.0
+      ? `Total return over ${selectedRange}`
+      : `Annualized over ${years.toFixed(1)} Years (${selectedRange})`;
+
+    return { cagr: formattedCagr, periodLabel: periodText, isPos };
+  }, [prices, selectedRange]);
+
   return (
     <div className="space-y-8">
       {/* Subtitle */}
@@ -207,14 +245,20 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
         {/* CAGR */}
         <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e1a] p-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Historical Stock CAGR
+            Historical Stock CAGR ({selectedRange})
           </p>
-          <p className="mt-4 text-5xl font-bold text-white">
-            +7.26%
+          <p className="mt-4 text-5xl font-bold text-white font-mono">
+            {cagrMetrics.cagr}
           </p>
           <div className="mt-4">
-            <span className="inline-flex items-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-400">
-              Annualized over 5.0 Years
+            <span
+              className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-medium ${
+                cagrMetrics.isPos
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                  : "border-red-500/30 bg-red-500/10 text-red-400"
+              }`}
+            >
+              {cagrMetrics.periodLabel}
             </span>
           </div>
         </div>
