@@ -110,7 +110,7 @@ const INDICATORS = [
   { id: "rsi", label: "RSI", on: true },
 ];
 
-function generateOHLC(base: number) {
+function generateOHLC(base: number, days = 252) {
   const data: any[] = [];
   const volumeData: any[] = [];
   const ma50: any[] = [];
@@ -118,7 +118,10 @@ function generateOHLC(base: number) {
   let price = base * 0.85;
   const today = new Date();
 
-  for (let i = 300; i >= 0; i--) {
+  // Generate historical points including padding for 200 MA calculation
+  const totalPoints = days + 200;
+
+  for (let i = totalPoints; i >= 0; i--) {
     const dt = new Date(today); dt.setDate(dt.getDate() - i);
     const open = price;
     const change = (Math.random() - 0.48) * base * 0.025;
@@ -131,6 +134,7 @@ function generateOHLC(base: number) {
     data.push({ time: dateStr, open, high, low, close });
     volumeData.push({ time: dateStr, value: vol, color: close >= open ? "rgba(38,166,91,0.5)" : "rgba(239,68,68,0.5)" });
   }
+
   for (let i = 0; i < data.length; i++) {
     if (i >= 49) {
       const avg = data.slice(i - 49, i + 1).reduce((s, d) => s + d.close, 0) / 50;
@@ -141,7 +145,15 @@ function generateOHLC(base: number) {
       ma200.push({ time: data[i].time, value: Math.round(avg * 100) / 100 });
     }
   }
-  return { candleData: data, volumeData, ma50, ma200 };
+
+  // Slice down to requested timeframe length
+  const startIdx = Math.max(0, data.length - days);
+  return {
+    candleData: data.slice(startIdx),
+    volumeData: volumeData.slice(startIdx),
+    ma50: ma50.filter(m => data.slice(startIdx).some(d => d.time === m.time)),
+    ma200: ma200.filter(m => data.slice(startIdx).some(d => d.time === m.time)),
+  };
 }
 
 function generateMACD(candles: any[]) {
@@ -311,7 +323,24 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
     };
   }, [ticker, companyInfo, basePrice]);
 
-  const { candleData, volumeData, ma50, ma200 } = useMemo(() => generateOHLC(basePrice), [basePrice]);
+  const [timeframe, setTimeframe] = useState("1Y");
+
+  const timeframeDays = useMemo(() => {
+    switch (timeframe) {
+      case "1M": return 22;
+      case "3M": return 65;
+      case "6M": return 130;
+      case "1Y": return 252;
+      case "2Y": return 504;
+      case "5Y": return 1260;
+      case "Max": return 1260;
+      default: return 252;
+    }
+  }, [timeframe]);
+
+  const { candleData, volumeData, ma50, ma200 } = useMemo(() => {
+    return generateOHLC(basePrice, timeframeDays);
+  }, [basePrice, timeframeDays]);
   const { macdLine, signalLine, histogram } = useMemo(() => generateMACD(candleData), [candleData]);
   const rsiData = useMemo(() => generateRSI(candleData), [candleData]);
   const bollinger = useMemo(() => generateBollinger(candleData), [candleData]);

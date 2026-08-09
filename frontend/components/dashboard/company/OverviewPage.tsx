@@ -124,7 +124,24 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
   const changeVal = rawData?.day_change ? Number(rawData.day_change) : (basePrice * changePct) / 100;
   const isPositive = changePct >= 0;
 
-  const prices = useMemo(() => getPrices(basePrice), [basePrice]);
+  const pricesFull = useMemo(() => getPrices(basePrice), [basePrice]);
+
+  const prices = useMemo(() => {
+    let days = 252;
+    switch (selectedRange) {
+      case "1D": days = 1; break;
+      case "5D": days = 5; break;
+      case "1M": days = 22; break;
+      case "3M": days = 65; break;
+      case "6M": days = 130; break;
+      case "1Y": days = 252; break;
+      case "2Y": days = 504; break;
+      case "5Y": days = 1260; break;
+      case "Max": days = pricesFull.length; break;
+      default: days = 252; break;
+    }
+    return pricesFull.slice(Math.max(0, pricesFull.length - days));
+  }, [pricesFull, selectedRange]);
 
   const tickFill = isLightMode ? "#475569" : "#94a3b8";
   const gridStroke = isLightMode ? "rgba(148,163,184,0.2)" : "rgba(255,255,255,0.08)";
@@ -228,7 +245,7 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                interval={42}
+                interval={prices.length <= 10 ? 0 : prices.length <= 30 ? 4 : prices.length <= 90 ? 12 : 42}
               />
               <YAxis
                 yAxisId="price"
