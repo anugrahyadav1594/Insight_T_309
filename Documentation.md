@@ -13,7 +13,7 @@
 INSIGHT is a full-stack web application with a React frontend, a modular FastAPI backend, and PostgreSQL + Redis data layer. The frontend is a single-page Next.js app that talks to the backend exclusively over a versioned REST API (`/api/v1`); the backend integrates with external market-data and AI providers server-side.
 
 ```
-┌─────────────────────────────┐        REST /api/v1        ┌──────────────────────────────────────────┐
+┌─────────────────────────────┐        REST /api/v1        ┌───────────────────────────────────────────┐
 │  Frontend (Next.js 16)      │  ────────────────────────► │  Backend (FastAPI, Python 3.12)           │
 │  React 19 · TypeScript      │  ◄──────────────────────── │  ├─ api/v1 routers (auth, companies, …)   │
 │  Tailwind CSS 4 · Zustand   │      JSON responses        │  ├─ services (business logic)             │
