@@ -74,6 +74,7 @@ export default function HowItWorks({
     return (
         <section
             id="how-it-works"
+            suppressHydrationWarning
             className="relative overflow-hidden px-6 py-16"
         >
             <div className="absolute left-1/2 top-24 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-[120px]" />

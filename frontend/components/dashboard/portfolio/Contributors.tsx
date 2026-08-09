@@ -24,9 +24,10 @@ interface ContributorRowProps {
     rank: number;
     isTop: boolean;
     totalValue: number;
+    onViewStock?: (symbol: string) => void;
 }
 
-function ContributorRow({ holding, rank, isTop, totalValue }: ContributorRowProps) {
+function ContributorRow({ holding, rank, isTop, totalValue, onViewStock }: ContributorRowProps) {
     const pnl = calcPnL(holding);
     const isPositive = pnl.amount >= 0;
     const weightPercent = ((holding.current * holding.qty) / totalValue) * 100;
@@ -37,7 +38,8 @@ function ContributorRow({ holding, rank, isTop, totalValue }: ContributorRowProp
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.2 + rank * 0.06, ease: EASE }}
             whileHover={{ x: 4, transition: HOVER_SPRING }}
-            className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors duration-300 hover:border-cyan-400/30 hover:bg-white/10"
+            onClick={() => onViewStock?.(holding.symbol)}
+            className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 transition-all duration-300 hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-lg"
         >
             <div className="flex items-center gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold bg-white/5 text-slate-400 border border-white/10">
@@ -45,14 +47,14 @@ function ContributorRow({ holding, rank, isTop, totalValue }: ContributorRowProp
                 </div>
                 <div>
                     <div className="flex items-center gap-2">
-                        <span className="font-bold text-white">{holding.symbol}</span>
-                        <span className="text-xs text-slate-500">{holding.name}</span>
+                        <span className="font-bold text-white group-hover:text-cyan-300 transition-colors">{holding.symbol}</span>
+                        <span className="text-xs text-slate-400">{holding.name}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs">
                         <span className={`font-semibold ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
                             {isPositive ? "+" : ""}{pnl.percent.toFixed(2)}%
                         </span>
-                        <span className="text-slate-500">
+                        <span className="text-slate-400">
                             {formatCurrency(pnl.amount)} • {weightPercent.toFixed(1)}%
                         </span>
                     </div>
@@ -76,12 +78,14 @@ interface ContributorsProps {
     topContributors: Holding[];
     bottomLaggards: Holding[];
     totalValue: number;
+    onViewStock?: (symbol: string) => void;
 }
 
 export default function Contributors({
     topContributors,
     bottomLaggards,
     totalValue,
+    onViewStock,
 }: ContributorsProps) {
     return (
         <div className="mt-8 grid gap-16 md:grid-cols-2">
@@ -126,6 +130,7 @@ export default function Contributors({
                                     rank={i + 1}
                                     isTop={true}
                                     totalValue={totalValue}
+                                    onViewStock={onViewStock}
                                 />
                             ))
                         ) : (
@@ -185,6 +190,7 @@ export default function Contributors({
                                     rank={i + 1}
                                     isTop={false}
                                     totalValue={totalValue}
+                                    onViewStock={onViewStock}
                                 />
                             ))
                         ) : (

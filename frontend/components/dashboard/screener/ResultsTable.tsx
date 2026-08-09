@@ -11,9 +11,14 @@ function formatPrice(price: number): string {
   return `₹${price.toLocaleString("en-IN")}`;
 }
 
-const VERDICT_STYLES = {
+const VERDICT_STYLES: Record<string, string> = {
+  "Strong Bullish": "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  Bullish: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  Neutral: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  Bearish: "bg-red-500/15 text-red-400 border-red-500/30",
+  "Strong Bearish": "bg-rose-500/15 text-rose-400 border-rose-500/30",
   "Strong Buy": "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  Buy: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  Buy: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
   Hold: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   Avoid: "bg-red-500/15 text-red-400 border-red-500/30",
 };

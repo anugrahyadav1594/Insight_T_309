@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Mail, Edit2, Check, X as Cancel } from "lucide-react";
+import { useAuthStore } from "@/lib/auth";
 
 interface FullProfileModalProps {
     isOpen: boolean;
@@ -10,12 +11,21 @@ interface FullProfileModalProps {
 }
 
 export default function FullProfileModal({ isOpen, onClose }: FullProfileModalProps) {
-    // User data state (mock, can be replaced with global state)
-    const [name, setName] = useState("Demo User");
-    const [email, setEmail] = useState("demo@insight.ai");
-    const [avatar] = useState("DU");
-    const [subscription] = useState("Pro");
-    const [plan] = useState("₹499/month");
+    const user = useAuthStore((s) => s.user);
+
+    const [name, setName] = useState(user?.full_name || "Account User");
+    const [email, setEmail] = useState(user?.email || "user@insight.com");
+
+    useEffect(() => {
+        if (user) {
+            setName(user.full_name || "Account User");
+            setEmail(user.email || "user@insight.com");
+        }
+    }, [user]);
+
+    const avatar = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
+    const subscription = email === "demo@insight.com" ? "Demo Account" : "Pro Tier";
+    const plan = email === "demo@insight.com" ? "Free Demo" : "₹499/month";
 
     // Editing state
     const [editingField, setEditingField] = useState<"name" | "email" | null>(null);

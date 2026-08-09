@@ -5,6 +5,7 @@ import RiskFactorCard from "./shared/RiskFactorCard";
 import AiAnalysisButton from "./shared/AiAnalysisButton";
 import { getCompanyInfo } from "@/lib/companyData";
 import type { CompanyAnalysisResponse } from "@/lib/types";
+import { ShieldAlert, TrendingUp, Activity, Building2, Globe, Sparkles, ShieldCheck } from "lucide-react";
 
 interface Props {
   ticker: string;
@@ -56,6 +57,14 @@ function getCompanyRisk(companyInfo: any) {
   };
 }
 
+const CATEGORY_META = {
+  financial: { title: "Financial Risk", icon: ShieldAlert, color: "text-emerald-400" },
+  valuation: { title: "Valuation Risk", icon: TrendingUp, color: "text-cyan-400" },
+  market: { title: "Market Risk", icon: Activity, color: "text-blue-400" },
+  industry: { title: "Industry Risk", icon: Building2, color: "text-amber-400" },
+  macro: { title: "Macro & Execution Risk", icon: Globe, color: "text-purple-400" },
+};
+
 export default function RiskAssessmentPage({ ticker, companyName, analysisData }: Props) {
   const companyInfo = useMemo(() => getCompanyInfo(ticker), [ticker]);
   const d = useMemo(() => getCompanyRisk(companyInfo), [companyInfo]);
@@ -66,51 +75,137 @@ export default function RiskAssessmentPage({ ticker, companyName, analysisData }
   const overallLabel = riskObj?.category || (overallRisk < 35 ? "Low Risk" : overallRisk < 65 ? "Moderate Risk" : "High Risk");
   const overallDescription = (analysisData?.ai as any)?.risk_summary || d.overallDescription;
 
+  const isLow = overallLabel.toLowerCase().includes("low");
+
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-8 backdrop-blur-xl">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Overall Risk Assessment</p>
-        <h3 className="mt-1 text-xl font-bold text-white">{companyName}</h3>
-        <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
-          <div className="flex flex-col items-center"><span className="text-4xl font-bold text-red-400">{overallRisk}</span><span className="text-xs text-slate-500">RISK</span></div>
-          <div className="h-16 w-px bg-white/[0.08]" />
-          <div className="flex flex-col items-center"><span className="text-4xl font-bold text-emerald-400">{overallSafety}</span><span className="text-xs text-slate-500">SAFETY</span></div>
-          <div className="flex flex-col items-center sm:ml-8">
-            <span className={`inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-semibold ${overallLabel === "Low Risk" ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-400" : "border-amber-500/20 bg-amber-500/15 text-amber-400"}`}>{overallLabel}</span>
-            <p className="mt-3 max-w-sm text-center text-sm text-slate-400">{overallDescription}</p>
+    <div className="space-y-10">
+      {/* Hero Overview Risk Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 p-8 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:border-cyan-400/30">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-400 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" /> Comprehensive Risk Diagnostics
+            </span>
+            <h3 className="mt-1 text-2xl font-bold text-white tracking-tight">{companyName}</h3>
+          </div>
+
+          <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold tracking-wide shadow-lg ${
+            isLow ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300 shadow-emerald-500/10" : "border-amber-500/30 bg-amber-500/15 text-amber-300 shadow-amber-500/10"
+          }`}>
+            <span className={`h-2 w-2 rounded-full ${isLow ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+            {overallLabel}
+          </span>
+        </div>
+
+        <div className="mt-8 grid items-center gap-8 md:grid-cols-3">
+          {/* Radial Ring Meter */}
+          <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.04] border border-white/10">
+            <div className="relative flex h-36 w-36 items-center justify-center">
+              <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" stroke="rgba(148,163,184,0.2)" strokeWidth="8" fill="transparent" />
+                <circle
+                  cx="50" cy="50" r="42"
+                  stroke={isLow ? "#34d399" : "#fbbf24"}
+                  strokeWidth="8"
+                  strokeDasharray={`${(overallSafety / 100) * 264} 264`}
+                  strokeLinecap="round"
+                  fill="transparent"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute text-center">
+                <span className="text-3xl font-black text-white font-mono">{overallSafety}%</span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-emerald-400">Safety Index</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Score Breakdown */}
+          <div className="flex items-center justify-around gap-6 rounded-2xl bg-white/[0.04] border border-white/10 p-6 font-mono">
+            <div className="text-center">
+              <span className="text-4xl font-extrabold text-red-400">{overallRisk}</span>
+              <span className="block mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Risk Score</span>
+            </div>
+            <div className="h-12 w-px bg-white/10" />
+            <div className="text-center">
+              <span className="text-4xl font-extrabold text-emerald-400">{overallSafety}</span>
+              <span className="block mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Safety Score</span>
+            </div>
+          </div>
+
+          {/* Qualitative AI Summary */}
+          <div className="flex flex-col justify-center rounded-2xl bg-white/[0.04] border border-white/10 p-6">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Executive Summary</h4>
+            <p className="text-xs leading-relaxed text-slate-400">{overallDescription}</p>
           </div>
         </div>
       </div>
-      {(["financial","valuation","market","industry","macro"] as const).map(cat => (
-        <div key={cat}>
-          <h3 className="mb-4 text-lg font-semibold text-white">{cat === "financial" ? "Financial Risk" : cat === "valuation" ? "Valuation Risk" : cat === "market" ? "Market Risk" : cat === "industry" ? "Industry Risk" : "Macro & Execution Risk"}</h3>
-          <div className="grid gap-4 sm:grid-cols-2">{d[cat].map((f: any) => <RiskFactorCard key={f.title} {...f} />)}</div>
+
+      {/* Categorized Risk Factors Grid */}
+      {(["financial", "valuation", "market", "industry", "macro"] as const).map(cat => {
+        const meta = CATEGORY_META[cat];
+        const IconComponent = meta.icon;
+
+        return (
+          <div key={cat} className="space-y-4">
+            <div className="flex items-center gap-3 border-b border-white/[0.06] pb-3">
+              <IconComponent className={`h-5 w-5 ${meta.color}`} />
+              <h3 className="text-lg font-bold text-white tracking-tight">{meta.title}</h3>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {d[cat].map((f: any) => <RiskFactorCard key={f.title} {...f} />)}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Weighted Risk Factor Table */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] pb-3">
+          <ShieldAlert className="h-5 w-5 text-cyan-400" />
+          <h3 className="text-lg font-bold text-white tracking-tight">Weighted Risk Factor Matrix</h3>
         </div>
-      ))}
-      <div>
-        <h3 className="mb-4 text-lg font-semibold text-white">Weighted Risk Factor Table</h3>
-        <div className="overflow-x-auto rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl">
-          <table className="w-full text-left text-sm">
-            <thead><tr className="border-b border-white/[0.06]">
-              <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Factor</th>
-              <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Weight</th>
-              <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Score</th>
-              <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Contribution</th>
-              <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Status</th>
-            </tr></thead>
-            <tbody>{d.table.map((r: any, i: number) => (
-              <tr key={r.factor} className={`border-b border-white/[0.03] ${i % 2 === 0 ? "bg-white/[0.01]" : ""}`}>
-                <td className="px-5 py-3 font-medium text-slate-200">{r.factor}</td>
-                <td className="px-5 py-3 text-slate-400">{r.weight}%</td>
-                <td className="px-5 py-3 text-slate-400">{r.score}/100</td>
-                <td className="px-5 py-3 font-medium text-slate-300">{r.contribution.toFixed(1)}</td>
-                <td className="px-5 py-3"><span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${r.status === "Low" ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-400" : "border-amber-500/20 bg-amber-500/15 text-amber-400"}`}>{r.status}</span></td>
-              </tr>
-            ))}</tbody>
-          </table>
+
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 shadow-2xl backdrop-blur-2xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/[0.03]">
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-cyan-400">Factor</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-cyan-400">Weight</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-cyan-400">Score</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-cyan-400">Contribution</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-cyan-400">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {d.table.map((r: any) => (
+                  <tr key={r.factor} className="transition-colors hover:bg-white/[0.04]">
+                    <td className="px-6 py-4 font-semibold text-slate-200">{r.factor}</td>
+                    <td className="px-6 py-4 font-mono text-slate-400">{r.weight}%</td>
+                    <td className="px-6 py-4 font-mono text-slate-300">{r.score}/100</td>
+                    <td className="px-6 py-4 font-mono font-bold text-cyan-300">{r.contribution.toFixed(1)}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-bold tracking-wide ${
+                        r.status === "Low" ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-400" : "border-amber-500/30 bg-amber-500/15 text-amber-400"
+                      }`}>
+                        {r.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-      <AiAnalysisButton label="Get AI Risk Analysis" />
+
+      {/* AI Risk Analysis Action Button */}
+      <AiAnalysisButton
+        label="Get Deep AI Risk Assessment & Diagnostics"
+        ticker={ticker}
+        companyName={companyName}
+      />
     </div>
   );
 }

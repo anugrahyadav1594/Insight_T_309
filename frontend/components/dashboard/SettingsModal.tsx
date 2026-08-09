@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Lock, Bell, Moon, Eye, EyeOff, Settings as SettingsIcon } from "lucide-react";
 import CustomSelect from "./screener/CustomSelect";
@@ -41,6 +41,27 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const savedTheme = localStorage.getItem("insight_theme") || "dark";
+            setTheme(savedTheme);
+        }
+    }, [isOpen]);
+
+    const handleThemeChange = (newTheme: string) => {
+        setTheme(newTheme);
+        if (typeof window !== "undefined") {
+            localStorage.setItem("insight_theme", newTheme);
+            if (newTheme === "light") {
+                document.documentElement.classList.add("light");
+                document.documentElement.classList.remove("dark");
+            } else {
+                document.documentElement.classList.add("dark");
+                document.documentElement.classList.remove("light");
+            }
+        }
+    };
 
     // Password visibility states
     const [showOldPassword, setShowOldPassword] = useState(false);
@@ -186,7 +207,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-300">Theme</span>
-                                        <ThemeDropdown value={theme} onChange={setTheme} />
+                                        <ThemeDropdown value={theme} onChange={handleThemeChange} />
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-300">Notifications</span>

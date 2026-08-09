@@ -17,10 +17,244 @@
     --accent: #00D4FF;
 }
 
+html.light {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
+
+    --card: #ffffff;
+    --border: #cbd5e1;
+
+    --accent: #0284c7;
+}
+
 body {
     background: var(--background);
     color: var(--foreground);
     font-family: Inter, Arial, Helvetica, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light Theme Component Overrides */
+html.light body {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+html.light main {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* Background Grid Overlay (Linear & Radial Gridlines) */
+html.light .pointer-events-none.fixed.inset-0 {
+    opacity: 0.7 !important;
+    filter: invert(0.95) hue-rotate(180deg) !important;
+}
+
+/* Hardcoded Dark Background Containers -> Crisp Light Glass Cards */
+html.light .bg-\[\#070b14\],
+html.light .bg-\[\#070B14\],
+html.light .bg-\[\#0a0e1a\],
+html.light .bg-\[\#0b1120\],
+html.light .bg-\[\#0B1220\],
+html.light .bg-\[\#0c1324\],
+html.light .bg-\[\#070b14\]\/90,
+html.light .bg-\[\#0c1324\]\/90,
+html.light .bg-\[\#070b14\]\/95,
+html.light .bg-\[\#0c1324\]\/95,
+html.light .bg-\[\#0c1322\]\/95,
+html.light .bg-black\/40,
+html.light .bg-black\/30,
+html.light .bg-black\/20 {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+html.light .from-\[\#0c1324\]\/95 {
+    --tw-gradient-from: #ffffff !important;
+}
+
+html.light .to-\[\#070b14\]\/95 {
+    --tw-gradient-to: #f8fafc !important;
+}
+
+html.light .bg-black\/80 {
+    background-color: rgba(15, 23, 42, 0.4) !important;
+}
+
+html.light .from-\[\#0c1324\]\/90 {
+    --tw-gradient-from: #ffffff !important;
+}
+
+html.light .to-\[\#070b14\]\/90 {
+    --tw-gradient-to: #f8fafc !important;
+}
+
+/* Borders */
+html.light .border-white\/10,
+html.light .border-white\/15,
+html.light .border-white\/20,
+html.light .border-white\/\[0\.08\],
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.12\] {
+    border-color: #cbd5e1 !important;
+}
+
+/* Text Colors */
+html.light .text-slate-400,
+html.light .text-gray-400,
+html.light .text-slate-500 {
+    color: #475569 !important;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-200,
+html.light .text-slate-100,
+html.light .text-gray-300,
+html.light .text-gray-200,
+html.light .text-gray-100,
+html.light .text-white {
+    color: #0f172a !important;
+}
+
+/* High Contrast Accent & Active Pill Text Colors for Light Mode */
+html.light .text-cyan-300,
+html.light .text-cyan-400 {
+    color: #0369a1 !important;
+    font-weight: 800 !important;
+}
+
+html.light .text-cyan-200 {
+    color: #075985 !important;
+    font-weight: 800 !important;
+}
+
+html.light .text-emerald-400,
+html.light .text-emerald-300 {
+    color: #15803d !important;
+    font-weight: 700 !important;
+}
+
+html.light .text-blue-400,
+html.light .text-blue-300 {
+    color: #1d4ed8 !important;
+    font-weight: 700 !important;
+}
+
+html.light .text-purple-400,
+html.light .text-purple-300 {
+    color: #6b21a8 !important;
+    font-weight: 700 !important;
+}
+
+html.light .text-amber-400,
+html.light .text-amber-300 {
+    color: #b45309 !important;
+    font-weight: 700 !important;
+}
+
+html.light .text-red-400,
+html.light .text-red-300 {
+    color: #b91c1c !important;
+    font-weight: 700 !important;
+}
+
+/* Active Pill Gradients in Light Mode */
+html.light .from-cyan-500\/30 {
+    --tw-gradient-from: rgba(2, 132, 199, 0.18) !important;
+}
+
+html.light .to-blue-600\/30 {
+    --tw-gradient-to: rgba(37, 99, 235, 0.18) !important;
+}
+
+html.light .via-blue-600\/30 {
+    --tw-gradient-via: rgba(37, 99, 235, 0.18) !important;
+}
+
+html.light .bg-cyan-500\/10 {
+    background-color: rgba(2, 132, 199, 0.08) !important;
+}
+
+/* Pill & Button Backgrounds */
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/\[0\.08\],
+html.light .bg-white\/5,
+html.light .bg-white\/10 {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* Shadows */
+html.light .shadow-2xl,
+html.light .shadow-xl,
+html.light .shadow-lg {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Navbars & Fixed Headers */
+html.light nav {
+    background-color: rgba(255, 255, 255, 0.88) !important;
+    border-color: rgba(203, 213, 225, 0.8) !important;
+}
+
+/* Chart Gridlines & SVG Axis Text */
+html.light svg line,
+html.light .recharts-cartesian-grid line,
+html.light .recharts-polar-grid line,
+html.light .recharts-polar-grid path,
+html.light .recharts-polar-grid circle {
+    stroke: rgba(148, 163, 184, 0.35) !important;
+}
+
+html.light .recharts-text,
+html.light .recharts-cartesian-axis-tick-value,
+html.light .recharts-polar-angle-axis-tick text,
+html.light .recharts-polar-radius-axis-tick text {
+    fill: #475569 !important;
+}
+
+/* Recharts Tooltips */
+html.light .recharts-default-tooltip,
+html.light [class*="CustomFloatingTooltip"],
+html.light .recharts-tooltip-wrapper > div {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12) !important;
+}
+
+html.light .recharts-tooltip-item,
+html.light .recharts-tooltip-label {
+    color: #0f172a !important;
+}
+
+/* Modals & AI Drawers */
+html.light .bg-\[\#0b1120\]\/95,
+html.light .bg-\[\#0a0e1a\]\/95,
+html.light .bg-\[\#0b1120\],
+html.light .bg-\[\#0a0e1a\] {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+/* Input Elements */
+html.light input,
+html.light select,
+html.light textarea {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html.light input::placeholder {
+    color: #64748b !important;
 }
 
 /* Custom Global Scrollbars */

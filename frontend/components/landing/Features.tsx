@@ -60,6 +60,7 @@ const HOVER_SPRING = { type: "spring", stiffness: 260, damping: 24, mass: 0.9 } 
 export default function Features() {
     return (
         <section id="features"
+            suppressHydrationWarning
             className="relative overflow-hidden px-6 py-16"
         >
             {/* Background Glow */}

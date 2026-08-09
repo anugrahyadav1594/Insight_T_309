@@ -7,7 +7,7 @@ export interface CompanyAnalysisData {
   sector: string;
   chips: string[];
   recommendation: {
-    verdict: "Strong Buy" | "Buy" | "Hold" | "Sell";
+    verdict: "Strong Bullish" | "Bullish" | "Neutral" | "Bearish" | "Strong Bearish";
     score: number;
     confidence: string;
     summaryPoints: string[];
@@ -44,7 +44,7 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
     sector: "IT Services",
     chips: ["Large Cap", "High Quality", "Dividend", "Low Debt"],
     recommendation: {
-      verdict: "Strong Buy",
+      verdict: "Strong Bullish",
       score: 92,
       confidence: "High Conviction",
       summaryPoints: [
@@ -79,9 +79,9 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
       "Robust deal pipeline with mega-deal potential in BFSI & Retail sectors.",
     ],
     news: [
-      { title: "Earnings Beat: TCS Q4 margins hit 26%, net profit jumps 9% YoY", time: "Today", source: "Moneycontrol" },
-      { title: "Broker Upgrade: Top research house lifts TCS target price to ₹4,200", time: "Yesterday", source: "Bloomberg" },
-      { title: "New Deal: TCS signs multi-million dollar cloud transition deal with US retail giant", time: "3 days ago", source: "Mint" },
+      { title: "Earnings Beat: TCS Q4 margins hit 26%, net profit jumps 9% YoY", time: "Today", source: "Moneycontrol", url: "https://www.moneycontrol.com/news/business/earnings/tcs-q4-results-margins-hit-26-net-profit-jumps-9-yoy-126234.html" },
+      { title: "Broker Upgrade: Top research house lifts TCS target price to ₹4,200", time: "Yesterday", source: "Bloomberg", url: "https://www.bloomberg.com/markets/stocks" },
+      { title: "New Deal: TCS signs multi-million dollar cloud transition deal with US retail giant", time: "3 days ago", source: "Mint", url: "https://www.livemint.com/market/stock-market-news" },
     ],
   },
   INFY: {
@@ -93,7 +93,7 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
     sector: "IT Services",
     chips: ["Large Cap", "High Growth", "Strong Cashflow", "Low Debt"],
     recommendation: {
-      verdict: "Buy",
+      verdict: "Bullish",
       score: 88,
       confidence: "Medium-High Conviction",
       summaryPoints: [
@@ -127,8 +127,8 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
       "Strategic partnerships with hyperscalers.",
     ],
     news: [
-      { title: "Infosys launches Topaz, an AI-first suite of offerings", time: "2 days ago", source: "Economic Times" },
-      { title: "Brokerage maintains Buy rating on INFY post Q4 results", time: "4 days ago", source: "CNBC TV18" },
+      { title: "Infosys launches Topaz, an AI-first suite of offerings", time: "2 days ago", source: "Economic Times", url: "https://economictimes.indiatimes.com/tech/information-tech/infosys-topaz-ai-suite" },
+      { title: "Brokerage maintains Buy rating on INFY post Q4 results", time: "4 days ago", source: "CNBC TV18", url: "https://www.cnbctv18.com/market/stocks" },
     ],
   },
   HDFCBANK: {
@@ -140,7 +140,7 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
     sector: "Banking & Financials",
     chips: ["Large Cap", "High Quality", "Low NPA", "Strong Management"],
     recommendation: {
-      verdict: "Strong Buy",
+      verdict: "Strong Bullish",
       score: 91,
       confidence: "High Conviction",
       summaryPoints: [
@@ -174,8 +174,8 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
       "Sustained credit cycle upswing in India.",
     ],
     news: [
-      { title: "HDFC Bank net profit beats estimates, rises 37% YoY", time: "Yesterday", source: "Financial Express" },
-      { title: "Deposits grow at record pace in Q4; stock jumps 3%", time: "3 days ago", source: "Mint" },
+      { title: "HDFC Bank net profit beats estimates, rises 37% YoY", time: "Yesterday", source: "Financial Express", url: "https://www.financialexpress.com/market" },
+      { title: "Deposits grow at record pace in Q4; stock jumps 3%", time: "3 days ago", source: "Mint", url: "https://www.livemint.com/companies/news" },
     ],
   },
   RELIANCE: {
@@ -187,7 +187,7 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
     sector: "Conglomerate",
     chips: ["Large Cap", "Market Leader", "High Capex", "Diversified"],
     recommendation: {
-      verdict: "Buy",
+      verdict: "Bullish",
       score: 84,
       confidence: "Medium-High Conviction",
       summaryPoints: [
@@ -221,8 +221,8 @@ export const companyDataMap: Record<string, CompanyAnalysisData> = {
       "Monetization of retail assets via REITs or IPOs.",
     ],
     news: [
-      { title: "Reliance Retail acquires rights for global fashion brand", time: "Today", source: "Business Standard" },
-      { title: "Jio introduces new AI-powered cloud storage service plans", time: "5 days ago", source: "Economic Times" },
+      { title: "Reliance Retail acquires rights for global fashion brand", time: "Today", source: "Business Standard", url: "https://www.business-standard.com/company/reliance-ind-500325" },
+      { title: "Jio introduces new AI-powered cloud storage service plans", time: "5 days ago", source: "Economic Times", url: "https://economictimes.indiatimes.com/industry/telecom/telecom-news" },
     ],
   },
 };
@@ -269,7 +269,7 @@ export function getCompanyInfo(ticker: string): CompanyAnalysisData {
       pe < 25 ? "Value" : "High Growth",
     ],
     recommendation: {
-      verdict: pe < 20 && roe > 18 ? "Strong Buy" : pe < 30 ? "Buy" : "Hold",
+      verdict: pe < 20 && roe > 18 ? "Strong Bullish" : pe < 30 ? "Bullish" : "Neutral",
       score: 65 + (positiveHash % 30),
       confidence: "High Conviction",
       summaryPoints: [
@@ -304,9 +304,9 @@ export function getCompanyInfo(ticker: string): CompanyAnalysisData {
       `Strong industry tailwinds driving organic market share gains.`,
     ],
     news: [
-      { title: `${name} reports quarterly performance update with expanded margins`, time: "Today", source: "Moneycontrol" },
-      { title: `Leading research firm issues analyst rating on ${symbolUpper}`, time: "Yesterday", source: "Bloomberg" },
-      { title: `${symbolUpper} announces expansion plans in key domestic markets`, time: "2 days ago", source: "Mint" },
+      { title: `${name} reports quarterly performance update with expanded margins`, time: "Today", source: "Moneycontrol", url: `https://www.google.com/search?q=${encodeURIComponent(name + " news")}` },
+      { title: `Leading research firm issues analyst rating on ${symbolUpper}`, time: "Yesterday", source: "Bloomberg", url: `https://www.google.com/search?q=${encodeURIComponent(symbolUpper + " stock news")}` },
+      { title: `${symbolUpper} announces expansion plans in key domestic markets`, time: "2 days ago", source: "Mint", url: `https://www.google.com/search?q=${encodeURIComponent(symbolUpper + " expansion mint")}` },
     ],
   };
 }

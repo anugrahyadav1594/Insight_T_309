@@ -53,12 +53,12 @@ export default function SaveScreenDialog({ isOpen, onClose, onSave, editingName 
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             className="
               relative w-full max-w-sm rounded-3xl border border-white/10
-              bg-[#0b1220] p-6 shadow-2xl backdrop-blur-3xl z-10
+              bg-gradient-to-b from-[#0c1324]/95 to-[#070b14]/95 p-6 shadow-2xl backdrop-blur-3xl z-10
             "
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 {isEditing ? (
                   <>
                     <Pencil className="h-5 w-5 text-cyan-400" />
@@ -73,7 +73,7 @@ export default function SaveScreenDialog({ isOpen, onClose, onSave, editingName 
               </h3>
               <button
                 onClick={onClose}
-                className="rounded-lg p-1 text-slate-400 hover:bg-white/5 hover:text-white"
+                className="rounded-xl border border-white/10 bg-white/5 p-1 text-slate-400 hover:border-cyan-400/30 hover:bg-cyan-500/10 hover:text-cyan-300 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -91,7 +91,7 @@ export default function SaveScreenDialog({ isOpen, onClose, onSave, editingName 
                   value={screenName}
                   onChange={(e) => setScreenName(e.target.value)}
                   placeholder="e.g. High Growth Stocks"
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-400/50"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-slate-200 placeholder-slate-400 outline-none transition-all focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30"
                 />
                 {isEditing && (
                   <p className="mt-1 text-xs text-slate-500">Edit the name if you wish, or keep it the same.</p>

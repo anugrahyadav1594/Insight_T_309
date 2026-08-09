@@ -42,15 +42,15 @@ export default function AddFilterModal({ isOpen, onClose, onSelectMetric, active
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             className="
               relative w-full max-w-lg rounded-3xl border border-white/10
-              bg-[#0b1220] p-6 shadow-2xl backdrop-blur-3xl z-10
+              bg-gradient-to-b from-[#0c1324]/95 to-[#070b14]/95 p-6 shadow-2xl backdrop-blur-3xl z-10
             "
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-              <h3 className="text-lg font-bold text-white">Add Filter Metric</h3>
+              <h3 className="text-lg font-bold text-slate-100">Add Filter Metric</h3>
               <button
                 onClick={onClose}
-                className="rounded-lg p-1 text-slate-400 hover:bg-white/5 hover:text-white"
+                className="rounded-xl border border-white/10 bg-white/5 p-1.5 text-slate-400 transition-colors hover:border-cyan-400/30 hover:bg-cyan-500/10 hover:text-cyan-300"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -58,13 +58,13 @@ export default function AddFilterModal({ isOpen, onClose, onSelectMetric, active
 
             {/* Search */}
             <div className="relative mb-6">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search metrics..."
-                className="w-full rounded-xl border border-white/10 bg-black/40 py-2.5 pl-10 pr-4 text-sm text-white outline-none focus:border-cyan-400/50"
+                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-400 outline-none transition-all focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30"
               />
             </div>
 
@@ -76,7 +76,7 @@ export default function AddFilterModal({ isOpen, onClose, onSelectMetric, active
 
                 return (
                   <div key={cat} className="space-y-2">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-cyan-400">
                       {cat}
                     </h4>
                     <div className="grid gap-2 grid-cols-2">
@@ -88,9 +88,9 @@ export default function AddFilterModal({ isOpen, onClose, onSelectMetric, active
                             onClose();
                           }}
                           className="
-                            flex items-center justify-between rounded-xl border border-white/5
-                            bg-white/[0.02] px-4 py-3 text-left text-xs font-semibold text-slate-300
-                            transition hover:border-cyan-400/30 hover:bg-white/5 hover:text-white
+                            flex items-center justify-between rounded-xl border border-white/10
+                            bg-white/5 px-4 py-3 text-left text-xs font-semibold text-slate-300
+                            transition-all hover:border-cyan-400/40 hover:bg-cyan-500/10 hover:text-cyan-300
                           "
                         >
                           <span>{m.name}</span>

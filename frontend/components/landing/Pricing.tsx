@@ -63,7 +63,8 @@ export default function Pricing({
     return (
         <section
             id="pricing"
-            className="relative overflow-hidden py-16 text-white"
+            suppressHydrationWarning
+            className="relative overflow-hidden px-6 py-16 md:py-24 text-white"
         >
             {/* Background Glow — same cyan/blue pairing as Features/HowItWorks/FAQ */}
             <div className="absolute inset-0 -z-10 overflow-hidden">

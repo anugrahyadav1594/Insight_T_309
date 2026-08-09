@@ -23,3 +23,16 @@ export async function searchCompanies(
 export async function getCompanyAnalysis(ticker: string): Promise<CompanyAnalysisResponse> {
   return apiClient.get<CompanyAnalysisResponse>(`/companies/${ticker}`);
 }
+
+/** Get recent news & corporate announcements for a ticker. */
+export async function getCompanyNews(
+  ticker: string
+): Promise<Array<{ title: string; time: string; source: string; url?: string }>> {
+  try {
+    return await apiClient.get<Array<{ title: string; time: string; source: string; url?: string }>>(
+      `/companies/${ticker}/news`
+    );
+  } catch {
+    return [];
+  }
+}

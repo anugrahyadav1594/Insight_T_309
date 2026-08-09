@@ -16,10 +16,10 @@ const accentColors = {
 
 export default function MetricCard({ title, value, subtitle, accent = "default" }: MetricCardProps) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5 backdrop-blur-xl transition-colors duration-300 hover:border-white/[0.12]">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{title}</p>
-      <p className={`mt-2 text-2xl font-bold ${accentColors[accent]}`}>{value}</p>
-      {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
+    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 p-5 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(34,211,238,0.12)] hover:-translate-y-0.5">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{title}</p>
+      <p className={`mt-2 text-2xl font-black font-mono ${accentColors[accent]}`}>{value}</p>
+      {subtitle && <p className="mt-1 text-xs text-slate-400 font-medium">{subtitle}</p>}
     </div>
   );
 }

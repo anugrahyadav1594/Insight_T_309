@@ -168,7 +168,7 @@ export default function FAQSection() {
                                                 }}
                                                 className="border-t border-white/10 px-7 pb-7 pt-5"
                                             >
-                                                <p className="whitespace-pre-line text-base leading-8 text-gray-300">
+                                                <p className="whitespace-pre-line text-base font-medium leading-relaxed text-slate-300">
                                                     {faq.answer}
                                                 </p>
                                             </motion.div>

@@ -94,22 +94,24 @@ export default function CompanyAnalysis({
       <CompanyHeader name={displayName} ticker={selectedTicker} exchange="NSE" sector={displaySector} price={displayPrice} change={displayChange} chips={displayChips} />
 
       <div className="overflow-x-auto no-scrollbar">
-        <div className="flex gap-1.5 rounded-2xl border border-white/10 bg-black/40 p-1.5 backdrop-blur-xl">
+        <div className="flex gap-1.5 rounded-2xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 p-1.5 shadow-xl backdrop-blur-2xl">
           {COMPANY_SUB_TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
-                  isActive ? "text-cyan-300" : "text-slate-400 hover:text-white"
+                className={`relative whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-bold tracking-wide transition-all duration-300 ${
+                  isActive
+                    ? "text-cyan-300"
+                    : "text-slate-400 hover:text-cyan-300"
                 }`}
               >
                 <span className="relative z-10">{tab.label}</span>
                 {isActive && (
                   <motion.div
                     layoutId="company-subtab-active"
-                    className="absolute inset-0 rounded-xl bg-cyan-500/15 border border-cyan-500/30 shadow-md shadow-cyan-500/10"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/25 to-blue-600/25 border border-cyan-400/50 shadow-[0_0_15px_rgba(34,211,238,0.25)]"
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}

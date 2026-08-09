@@ -13,9 +13,14 @@ interface CompanyRecommendationProps {
 export default function CompanyRecommendation({ data }: CompanyRecommendationProps) {
   const { verdict, score, confidence, summaryPoints } = data.recommendation;
 
-  const verdictColors = {
+  const verdictColors: Record<string, string> = {
+    "Strong Bullish": "from-emerald-400 to-teal-500 text-emerald-400",
+    Bullish: "from-cyan-400 to-blue-500 text-cyan-400",
+    Neutral: "from-amber-400 to-orange-500 text-amber-400",
+    Bearish: "from-red-400 to-pink-500 text-red-400",
+    "Strong Bearish": "from-rose-500 to-red-600 text-red-500",
     "Strong Buy": "from-emerald-400 to-teal-500 text-emerald-400",
-    Buy: "from-blue-400 to-indigo-500 text-blue-400",
+    Buy: "from-cyan-400 to-blue-500 text-cyan-400",
     Hold: "from-amber-400 to-orange-500 text-amber-400",
     Sell: "from-red-400 to-pink-500 text-red-400",
   };

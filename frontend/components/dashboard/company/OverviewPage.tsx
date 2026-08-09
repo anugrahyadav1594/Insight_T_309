@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
-  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Line, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Newspaper, Sparkles, Building2 } from "lucide-react";
+import { Newspaper, Sparkles, Building2, ExternalLink } from "lucide-react";
 import { companyDataMap, getCompanyInfo } from "@/lib/companyData";
 import type { CompanyAnalysisResponse } from "@/lib/types";
+import AiAnalysisButton from "./shared/AiAnalysisButton";
 
 interface Props {
   ticker: string;
@@ -20,8 +21,18 @@ function getPrices(base: number) {
   const today = new Date();
   for (let i = 252; i >= 0; i--) {
     const dt = new Date(today); dt.setDate(dt.getDate() - i);
+    const prevP = p;
     p = Math.max(p + (Math.random() - 0.48) * base * 0.02, base * 0.6);
-    d.push({ date: dt.toISOString().split("T")[0], price: Math.round(p * 100) / 100, volume: Math.round((8 + Math.random() * 12) * 1e6), ma20: undefined as number | undefined, ma50: undefined as number | undefined });
+    const roundedP = Math.round(p * 100) / 100;
+    const isUp = roundedP >= prevP;
+    d.push({
+      date: dt.toISOString().split("T")[0],
+      price: roundedP,
+      volume: Math.round((8 + Math.random() * 12) * 1e6),
+      volColor: isUp ? "#10b981" : "#ef4444",
+      ma20: undefined as number | undefined,
+      ma50: undefined as number | undefined,
+    });
   }
   for (let i = 0; i < d.length; i++) {
     if (i >= 19) d[i].ma20 = Math.round(d.slice(i - 19, i + 1).reduce((s: number, x: any) => s + x.price, 0) / 20 * 100) / 100;
@@ -94,6 +105,17 @@ function ChartTooltip({ active, payload }: any) {
 
 export default function OverviewPage({ ticker, companyName, analysisData }: Props) {
   const [selectedRange, setSelectedRange] = useState("1Y");
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const checkTheme = () => setIsLightMode(document.documentElement.classList.contains("light"));
+    checkTheme();
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   const companyInfo = useMemo(() => getCompanyInfo(ticker), [ticker]);
   const rawData = analysisData?.raw_data;
 
@@ -104,11 +126,15 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
 
   const prices = useMemo(() => getPrices(basePrice), [basePrice]);
 
+  const tickFill = isLightMode ? "#475569" : "#94a3b8";
+  const gridStroke = isLightMode ? "rgba(148,163,184,0.2)" : "rgba(255,255,255,0.08)";
+  const volumeFill = isLightMode ? "rgba(2,132,199,0.25)" : "rgba(34,211,238,0.25)";
+
   const newsData = [
-    { time: "2h ago", source: "Market Pulse", headline: `${companyName} (${ticker}) shows solid momentum following Q3 performance updates.` },
-    { time: "10h ago", source: "The Economic Times", headline: `${companyName} among top institutional holdings seeing increased allocation.` },
-    { time: "1d ago", source: "Moneycontrol.com", headline: `Technical analysts highlight key support & breakout levels for ${ticker}.` },
-    { time: "2d ago", source: "Mint", headline: `${companyName} executives outline strategic growth drivers at investor conference.` },
+    { time: "2h ago", source: "Market Pulse", headline: `${companyName} (${ticker}) shows solid momentum following Q3 performance updates.`, url: `https://www.google.com/search?q=${encodeURIComponent(companyName + " Q3 performance")}` },
+    { time: "10h ago", source: "The Economic Times", headline: `${companyName} among top institutional holdings seeing increased allocation.`, url: `https://economictimes.indiatimes.com/` },
+    { time: "1d ago", source: "Moneycontrol.com", headline: `Technical analysts highlight key support & breakout levels for ${ticker}.`, url: `https://www.moneycontrol.com/` },
+    { time: "2d ago", source: "Mint", headline: `${companyName} executives outline strategic growth drivers at investor conference.`, url: `https://www.livemint.com/` },
   ];
 
   return (
@@ -118,21 +144,24 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
         Showing overview for <span className="font-medium text-slate-300">{companyName}</span> · Data updates every 15 minutes
       </p>
 
-      {/* Time Range Selector — dark card row */}
-      <div className="grid grid-cols-9 gap-2">
-        {TIME_RANGES.map((range) => (
-          <button
-            key={range}
-            onClick={() => setSelectedRange(range)}
-            className={`rounded-xl py-3 text-sm font-medium transition-all ${
-              selectedRange === range
-                ? "bg-white/[0.08] text-white border border-white/[0.12]"
-                : "bg-white/[0.03] text-slate-400 border border-white/[0.06] hover:bg-white/[0.05] hover:text-white"
-            }`}
-          >
-            {range}
-          </button>
-        ))}
+      {/* Time Range Selector — radiant glowing buttons */}
+      <div className="flex items-center gap-2 overflow-x-auto p-2 rounded-2xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 shadow-2xl backdrop-blur-2xl">
+        {TIME_RANGES.map((range) => {
+          const isSelected = selectedRange === range;
+          return (
+            <button
+              key={range}
+              onClick={() => setSelectedRange(range)}
+              className={`flex-1 min-w-[50px] rounded-xl py-3 text-xs font-black font-mono tracking-wider transition-all duration-300 ${
+                isSelected
+                  ? "bg-gradient-to-r from-cyan-500/30 via-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-400/60 shadow-[0_0_25px_rgba(34,211,238,0.4)] scale-[1.04]"
+                  : "bg-white/[0.04] text-slate-400 border border-white/10 hover:border-cyan-400/50 hover:bg-cyan-500/15 hover:text-cyan-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.25)] hover:scale-[1.02]"
+              }`}
+            >
+              {range}
+            </button>
+          );
+        })}
       </div>
 
       {/* Price + CAGR Cards */}
@@ -180,7 +209,7 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
           <h3 className="text-lg font-semibold text-white">{companyName}</h3>
           <div className="flex items-center gap-5 text-xs">
             <span className="flex items-center gap-2 text-slate-400">
-              <span className="h-0.5 w-5 rounded bg-blue-500" /> Price
+              <span className={`h-0.5 w-5 rounded ${isPositive ? "bg-emerald-500" : "bg-red-500"}`} /> Price
             </span>
             <span className="flex items-center gap-2 text-slate-400">
               <span className="h-0.5 w-5 rounded bg-cyan-400" style={{ borderTop: "2px dashed #22d3ee" }} /> MA 20
@@ -193,17 +222,17 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
         <div className="h-[420px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={prices} margin={{ top: 10, right: 10, bottom: 0, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fill: "#475569", fontSize: 11 }}
+                tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 interval={42}
               />
               <YAxis
                 yAxisId="price"
-                tick={{ fill: "#475569", fontSize: 11 }}
+                tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 domain={["auto", "auto"]}
@@ -213,12 +242,19 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
               <Tooltip
                 content={<ChartTooltip />}
                 cursor={{ stroke: "rgba(34, 211, 238, 0.4)", strokeWidth: 1, strokeDasharray: "4 4" }}
-                isAnimationActive={false}
+                isAnimationActive={true}
+                animationDuration={150}
+                animationEasing="ease-out"
+                {...({ followPointer: true } as any)}
               />
-              <Bar yAxisId="vol" dataKey="volume" fill="rgba(51, 65, 85, 0.35)" barSize={4} radius={[2, 2, 0, 0]} />
-              <Line yAxisId="price" type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
-              <Line yAxisId="price" type="monotone" dataKey="ma20" stroke="#22d3ee" strokeWidth={1.5} dot={false} strokeDasharray="6 3" isAnimationActive={false} />
-              <Line yAxisId="price" type="monotone" dataKey="ma50" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="6 3" isAnimationActive={false} />
+              <Bar yAxisId="vol" dataKey="volume" barSize={4} radius={[2, 2, 0, 0]}>
+                {prices.map((entry, index) => (
+                  <Cell key={`vol-cell-${index}`} fill={entry.volColor} opacity={0.5} />
+                ))}
+              </Bar>
+              <Line yAxisId="price" type="monotone" dataKey="price" stroke={isPositive ? "#10b981" : "#ef4444"} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+              <Line yAxisId="price" type="monotone" dataKey="ma20" stroke="#22d3ee" strokeWidth={2} dot={false} strokeDasharray="6 3" isAnimationActive={false} />
+              <Line yAxisId="price" type="monotone" dataKey="ma50" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="6 3" isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -231,21 +267,32 @@ export default function OverviewPage({ ticker, companyName, analysisData }: Prop
           <h3 className="text-xl font-bold text-white">Recent News</h3>
         </div>
         <div className="space-y-3">
-          {newsData.map((item, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-white/[0.08] bg-[#0a0e1a] p-5 transition-colors hover:border-white/[0.14]"
-            >
-              <p className="text-sm text-slate-500">
-                {item.time} · <span className="text-blue-400">{item.source}</span>
-              </p>
-              <p className="mt-2 text-[15px] font-medium text-slate-200">
-                {item.headline}
-              </p>
-            </div>
-          ))}
+          {newsData.map((item, i) => {
+            const href = item.url || `https://www.google.com/search?q=${encodeURIComponent(item.headline)}`;
+            return (
+              <a
+                key={i}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 p-5 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(34,211,238,0.12)] hover:-translate-y-0.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-400 font-medium">
+                    {item.time} · <span className="text-cyan-400 font-mono font-semibold">{item.source}</span>
+                  </p>
+                  <ExternalLink className="h-4 w-4 shrink-0 text-cyan-400 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                </div>
+                <p className="mt-2 text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">
+                  {item.headline}
+                </p>
+              </a>
+            );
+          })}
         </div>
       </div>
+
+      <AiAnalysisButton ticker={ticker} companyName={companyName} label="Get AI Overview Analysis" />
     </div>
   );
 }
