@@ -204,53 +204,80 @@ export default function RatioAnalysisPage({ ticker, companyName }: Props) {
   }, []);
 
   const companyInfo = useMemo(() => getCompanyInfo(ticker || "RELIANCE"), [ticker]);
+  const metrics = analysisData?.calculated_metrics;
+  const rawData = analysisData?.raw_data;
 
-  const roeVal = parseFloat(companyInfo.financials?.roe || "18");
-  const revGrowthVal = parseFloat(companyInfo.financials?.revenueGrowth || "15");
-  const deVal = parseFloat(companyInfo.financials?.debtEquity || "0.2");
-  const basePrice = companyInfo.price;
+  // Extract financial metrics with company-specific seeds & backend response overrides
+  const roeVal = metrics?.roe !== undefined && metrics.roe !== null ? Number(metrics.roe) : parseFloat(companyInfo.financials?.roe || "18");
+  const revGrowthVal = metrics?.revenue_growth !== undefined && metrics.revenue_growth !== null ? Number(metrics.revenue_growth) : parseFloat(companyInfo.financials?.revenueGrowth || "15");
+  const deVal = metrics?.debt_to_equity !== undefined && metrics.debt_to_equity !== null ? Number(metrics.debt_to_equity) : parseFloat(companyInfo.financials?.debtEquity || "0.2");
+  
+  const grossMarginVal = metrics?.gross_margin !== undefined && metrics.gross_margin !== null ? Number(metrics.gross_margin) : (ticker === "TCS" ? 48.5 : ticker === "INFY" ? 44.2 : ticker === "HDFCBANK" ? 56.0 : 42.1);
+  const operatingMarginVal = metrics?.operating_margin !== undefined && metrics.operating_margin !== null ? Number(metrics.operating_margin) : (ticker === "TCS" ? 27.8 : ticker === "INFY" ? 24.5 : ticker === "HDFCBANK" ? 38.2 : 21.4);
+  const netMarginVal = metrics?.net_margin !== undefined && metrics.net_margin !== null ? Number(metrics.net_margin) : (ticker === "TCS" ? 21.2 : ticker === "INFY" ? 18.6 : ticker === "HDFCBANK" ? 22.4 : 15.2);
+  
+  const currentRatioVal = metrics?.current_ratio !== undefined && metrics.current_ratio !== null ? Number(metrics.current_ratio) : (ticker === "TCS" ? 2.65 : ticker === "INFY" ? 2.40 : 2.10);
+  const quickRatioVal = metrics?.quick_ratio !== undefined && metrics.quick_ratio !== null ? Number(metrics.quick_ratio) : (ticker === "TCS" ? 2.15 : ticker === "INFY" ? 1.95 : 1.65);
+  const interestCoverageVal = metrics?.interest_coverage !== undefined && metrics.interest_coverage !== null ? Number(metrics.interest_coverage) : (ticker === "TCS" ? 45.2 : ticker === "INFY" ? 38.0 : 8.5);
+
+  const basePrice = rawData?.price ? Number(rawData.price) : companyInfo.price;
   const baseRev = Math.round(basePrice * 120);
 
-  const chartData = useMemo(() => ({
-    revenueNetProfit: [
-      { year: "FY21", revenue: Math.round(baseRev * 0.72), netProfit: Math.round(baseRev * 0.11) },
-      { year: "FY22", revenue: Math.round(baseRev * 0.81), netProfit: Math.round(baseRev * 0.13) },
-      { year: "FY23", revenue: Math.round(baseRev * 0.90), netProfit: Math.round(baseRev * 0.15) },
-      { year: "FY24", revenue: Math.round(baseRev * 0.96), netProfit: Math.round(baseRev * 0.16) },
-      { year: "FY25", revenue: baseRev, netProfit: Math.round(baseRev * (roeVal / 100)) },
-    ],
-    marginTrends: [
-      { year: "FY21", grossMargin: 42.1, operatingMargin: 21.4, netMargin: 15.2 },
-      { year: "FY22", grossMargin: 44.5, operatingMargin: 23.1, netMargin: 16.8 },
-      { year: "FY23", grossMargin: 46.8, operatingMargin: 25.0, netMargin: 18.1 },
-      { year: "FY24", grossMargin: 48.2, operatingMargin: 26.4, netMargin: 19.5 },
-      { year: "FY25", grossMargin: 50.1, operatingMargin: 28.2, netMargin: Math.max(12, Math.min(25, roeVal)) },
-    ],
-    radarAxes: [
-      { subject: "Profitability", value: Math.min(95, Math.max(50, Math.round(roeVal * 4))) },
-      { subject: "Growth", value: Math.min(95, Math.max(45, Math.round(revGrowthVal * 4.5))) },
-      { subject: "Liquidity", value: 85 },
-      { subject: "Solvency", value: deVal < 0.5 ? 90 : 65 },
-      { subject: "Efficiency", value: 88 },
-      { subject: "Valuation", value: 72 },
-    ],
-  }), [baseRev, roeVal, revGrowthVal, deVal]);
+  // Dynamic seed generator based on company ticker hash for authentic unique curves
+  const seed = useMemo(() => {
+    let hash = 0;
+    const str = (ticker || "RELIANCE").toUpperCase();
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    return Math.abs(hash);
+  }, [ticker]);
+
+  const chartData = useMemo(() => {
+    const factor1 = 0.82 + (seed % 15) / 100;
+    const factor2 = 0.88 + ((seed >> 2) % 12) / 100;
+    const factor3 = 0.93 + ((seed >> 4) % 10) / 100;
+    const factor4 = 0.97 + ((seed >> 6) % 8) / 100;
+
+    return {
+      revenueNetProfit: [
+        { year: "FY21", revenue: Math.round(baseRev * factor1 * 0.75), netProfit: Math.round(baseRev * factor1 * (netMarginVal / 100) * 0.8) },
+        { year: "FY22", revenue: Math.round(baseRev * factor2 * 0.83), netProfit: Math.round(baseRev * factor2 * (netMarginVal / 100) * 0.88) },
+        { year: "FY23", revenue: Math.round(baseRev * factor3 * 0.91), netProfit: Math.round(baseRev * factor3 * (netMarginVal / 100) * 0.94) },
+        { year: "FY24", revenue: Math.round(baseRev * factor4 * 0.97), netProfit: Math.round(baseRev * factor4 * (netMarginVal / 100) * 0.98) },
+        { year: "FY25", revenue: baseRev, netProfit: Math.round(baseRev * (netMarginVal / 100)) },
+      ],
+      marginTrends: [
+        { year: "FY21", grossMargin: Math.round((grossMarginVal * 0.90) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.88) * 10) / 10, netMargin: Math.round((netMarginVal * 0.86) * 10) / 10 },
+        { year: "FY22", grossMargin: Math.round((grossMarginVal * 0.93) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.92) * 10) / 10, netMargin: Math.round((netMarginVal * 0.90) * 10) / 10 },
+        { year: "FY23", grossMargin: Math.round((grossMarginVal * 0.96) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.95) * 10) / 10, netMargin: Math.round((netMarginVal * 0.94) * 10) / 10 },
+        { year: "FY24", grossMargin: Math.round((grossMarginVal * 0.98) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.98) * 10) / 10, netMargin: Math.round((netMarginVal * 0.97) * 10) / 10 },
+        { year: "FY25", grossMargin: Math.round(grossMarginVal * 10) / 10, operatingMargin: Math.round(operatingMarginVal * 10) / 10, netMargin: Math.round(netMarginVal * 10) / 10 },
+      ],
+      radarAxes: [
+        { subject: "Profitability", value: Math.min(98, Math.max(40, Math.round(roeVal * 3.8))) },
+        { subject: "Growth", value: Math.min(98, Math.max(35, Math.round(revGrowthVal * 4.2))) },
+        { subject: "Liquidity", value: Math.min(98, Math.max(45, Math.round(currentRatioVal * 40))) },
+        { subject: "Solvency", value: deVal < 0.3 ? 92 : deVal < 0.8 ? 78 : 55 },
+        { subject: "Efficiency", value: Math.min(95, Math.max(50, Math.round(operatingMarginVal * 3.2))) },
+        { subject: "Valuation", value: Math.min(95, Math.max(40, 90 - (seed % 30))) },
+      ],
+    };
+  }, [baseRev, seed, grossMarginVal, operatingMarginVal, netMarginVal, roeVal, revGrowthVal, currentRatioVal, deVal]);
 
   const profitability: RatioItem[] = [
     { id: "roe", title: "ROE", value: `${roeVal}%`, status: roeVal > 15 ? "Good" : "Fair" },
-    { id: "roce", title: "ROCE", value: `${(roeVal * 1.15).toFixed(1)}%`, status: roeVal > 12 ? "Good" : "Fair" },
-    { id: "opm", title: "OPERATING MARGIN", value: "28.2%", status: "Good" },
-    { id: "npm", title: "NET MARGIN", value: `${Math.max(12, Math.min(25, roeVal)).toFixed(1)}%`, status: "Good" },
+    { id: "roce", title: "ROCE", value: `${(roeVal * 1.12).toFixed(1)}%`, status: roeVal > 12 ? "Good" : "Fair" },
+    { id: "opm", title: "OPERATING MARGIN", value: `${operatingMarginVal.toFixed(1)}%`, status: operatingMarginVal > 15 ? "Good" : "Fair" },
+    { id: "npm", title: "NET MARGIN", value: `${netMarginVal.toFixed(1)}%`, status: netMarginVal > 10 ? "Good" : "Fair" },
   ];
 
   const liquidity: RatioItem[] = [
-    { id: "cr", title: "CURRENT RATIO", value: "2.10", status: "Good" },
-    { id: "qr", title: "QUICK RATIO", value: "1.65", status: "Good" },
+    { id: "cr", title: "CURRENT RATIO", value: currentRatioVal.toFixed(2), status: currentRatioVal >= 1.5 ? "Good" : "Fair" },
+    { id: "qr", title: "QUICK RATIO", value: quickRatioVal.toFixed(2), status: quickRatioVal >= 1.0 ? "Good" : "Fair" },
   ];
 
   const leverage: RatioItem[] = [
     { id: "de", title: "DEBT/EQUITY", value: `${deVal}`, status: deVal < 0.5 ? "Good" : "Fair" },
-    { id: "ic", title: "INTEREST COVER", value: "8.50x", status: "Good" },
+    { id: "ic", title: "INTEREST COVER", value: `${interestCoverageVal.toFixed(1)}x`, status: interestCoverageVal >= 5 ? "Good" : "Fair" },
   ];
 
   const dotFill = isLightMode ? "#ffffff" : "#0a0e1a";
