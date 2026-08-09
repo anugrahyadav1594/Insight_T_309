@@ -1,140 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
-import AuthInput from "./AuthInput";
-import Divider from "./Divider";
 import GoogleButton from "./GoogleButton";
-import { useAuthStore } from "@/lib/auth";
-import { ApiError } from "@/lib/api";
 
 interface Props {
     switchToLogin: () => void;
     onSuccess: () => void;
 }
 
-export default function RegisterForm({
-    switchToLogin,
-    onSuccess,
-}: Props) {
-    const [fullName, setFullName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [errors, setErrors] = useState<{
-        fullName?: string;
-        email?: string;
-        password?: string;
-        confirmPassword?: string;
-        form?: string;
-    }>({});
-    const [isLoading, setIsLoading] = useState(false);
+const API_BASE =
+  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL) ||
+  "http://localhost:9056";
 
-    // Password visibility toggles
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-    const register = useAuthStore((s) => s.register);
-
-    // Password strength calculation
-    const getPasswordStrength = (pass: string) => {
-        if (!pass) return { score: 0, label: "", color: "" };
-        let score = 0;
-        if (pass.length >= 8) score += 1;
-        if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
-        if (/[0-9]/.test(pass)) score += 1;
-        if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-
-        switch (score) {
-            case 1:
-                return { score: 25, label: "Weak", color: "bg-red-500", text: "text-red-400" };
-            case 2:
-                return { score: 50, label: "Fair", color: "bg-yellow-500", text: "text-yellow-400" };
-            case 3:
-                return { score: 75, label: "Good", color: "bg-cyan-500", text: "text-cyan-400" };
-            case 4:
-                return { score: 100, label: "Strong", color: "bg-emerald-500", text: "text-emerald-400" };
-            default:
-                return { score: 15, label: "Very Weak", color: "bg-red-500", text: "text-red-400" };
-        }
-    };
-
-    const strength = getPasswordStrength(password);
-
-    const validate = () => {
-        const newErrors: typeof errors = {};
-
-        if (!fullName.trim()) {
-            newErrors.fullName = "Full name is required";
-        } else if (fullName.trim().length < 2) {
-            newErrors.fullName = "Name must be at least 2 characters";
-        }
-
-        if (!email.trim()) {
-            newErrors.email = "Email is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            newErrors.email = "Please enter a valid email address";
-        }
-
-        if (!password) {
-            newErrors.password = "Password is required";
-        } else if (password.length < 8) {
-            newErrors.password = "Password must be at least 8 characters";
-        } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
-            newErrors.password = "Password must contain at least one letter and one digit";
-        }
-
-        if (!confirmPassword) {
-            newErrors.confirmPassword = "Please confirm your password";
-        } else if (password !== confirmPassword) {
-            newErrors.confirmPassword = "Passwords do not match";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrors({});
-
-        if (!validate()) return;
-
-        setIsLoading(true);
-
-        try {
-            await register(email.trim(), password, fullName.trim());
-            onSuccess();
-        } catch (err) {
-            if (err instanceof ApiError) {
-                // Map backend validation errors to form fields
-                if (err.code === "VALIDATION_ERROR" && err.details && typeof err.details === "object") {
-                    const fieldErrors: typeof errors = {};
-                    const details = err.details as Record<string, string[]>;
-                    if (details.email) fieldErrors.email = details.email[0];
-                    if (details.password) fieldErrors.password = details.password[0];
-                    if (details.full_name) fieldErrors.fullName = details.full_name[0];
-                    if (Object.keys(fieldErrors).length > 0) {
-                        setErrors(fieldErrors);
-                    } else {
-                        setErrors({ form: err.message });
-                    }
-                } else if (err.code === "EMAIL_ALREADY_REGISTERED" || err.code === "CONFLICT") {
-                    setErrors({ email: "An account with this email already exists" });
-                } else {
-                    setErrors({ form: err.message || "Registration failed. Please try again." });
-                }
-            } else {
-                setErrors({ form: "Could not connect to server. Please ensure the backend is running on http://localhost:9056." });
-            }
-        } finally {
-            setIsLoading(false);
-        }
+export default function RegisterForm({ switchToLogin, onSuccess }: Props) {
+    const handleGoogleSignUp = () => {
+        // Redirect to backend Google OAuth endpoint
+        const callbackUrl = `${window.location.origin}/auth/google/callback`;
+        window.location.href = `${API_BASE}/api/v1/auth/google/login?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <div className="space-y-1 text-center">
+        <div className="space-y-6">
+            <div className="space-y-2 text-center">
                 <h2 className="text-3xl font-bold text-white">
                     Create Account
                 </h2>
@@ -143,135 +29,13 @@ export default function RegisterForm({
                 </p>
             </div>
 
-            {errors.form && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-sm text-red-400">
-                    {errors.form}
-                </div>
-            )}
-
-            <AuthInput
-                label="Full Name"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => {
-                    setFullName(e.target.value);
-                    if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
-                }}
-                error={errors.fullName}
-            />
-
-            <AuthInput
-                label="Email"
-                placeholder="john@example.com"
-                type="email"
-                value={email}
-                onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                }}
-                error={errors.email}
-            />
-
-            <div>
-                <AuthInput
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => {
-                        setPassword(e.target.value);
-                        if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-                    }}
-                    error={errors.password}
-                    showToggle={true}
-                    showPassword={showPassword}
-                    onToggle={() => setShowPassword(!showPassword)}
-                />
-
-                {/* Password Strength Indicator */}
-                {password && (
-                    <div className="mt-2 space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-400">Password strength:</span>
-                            <span className={`font-medium ${strength.text}`}>{strength.label}</span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                            <div
-                                className={`h-full transition-all duration-300 ${strength.color}`}
-                                style={{ width: `${strength.score}%` }}
-                            />
-                        </div>
-                    </div>
-                )}
+            <div className="space-y-4">
+                <GoogleButton onClick={handleGoogleSignUp} label="Sign up with Google" />
             </div>
 
-            <AuthInput
-                label="Confirm Password"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-                }}
-                error={errors.confirmPassword}
-                showToggle={true}
-                showPassword={showConfirmPassword}
-                onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-            />
-
-            <button
-                type="submit"
-                disabled={isLoading}
-                className="
-                    mt-2
-                    flex
-                    w-full
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-xl
-                    bg-cyan-500
-                    py-3
-                    font-semibold
-                    text-black
-                    transition
-                    hover:bg-cyan-400
-                    disabled:opacity-50
-                    disabled:cursor-not-allowed
-                "
-            >
-                {isLoading ? (
-                    <>
-                        <Loader2 className="h-5 w-5 animate-spin text-black" />
-                        <span>Registering...</span>
-                    </>
-                ) : (
-                    "Register"
-                )}
-            </button>
-
-            <Divider />
-
-            <GoogleButton
-                onClick={() => {
-                    const userProfile = {
-                      id: "google-user-id",
-                      email: "user.google@gmail.com",
-                      full_name: "Google Investor",
-                      created_at: new Date().toISOString(),
-                    };
-                    persistTokens("google-access-token", "google-refresh-token");
-                    localStorage.setItem("insight_user_profile", JSON.stringify(userProfile));
-                    useAuthStore.setState({
-                      accessToken: "google-access-token",
-                      refreshToken: "google-refresh-token",
-                      isAuthenticated: true,
-                      user: userProfile,
-                    });
-                    onSuccess();
-                }}
-            />
+            <p className="text-center text-xs text-slate-500 leading-relaxed px-4">
+                By creating an account, you agree to our Terms of Service and Privacy Policy.
+            </p>
 
             <p className="text-center text-sm text-gray-400">
                 Already have an account?{" "}
@@ -283,6 +47,6 @@ export default function RegisterForm({
                     Sign In
                 </button>
             </p>
-        </form>
+        </div>
     );
 }

@@ -51,26 +51,26 @@ export default function Home() {
             const accessToken = params.get("access_token");
             const email = params.get("email");
             const name = params.get("name") || params.get("full_name");
+            const picture = params.get("picture") || params.get("avatar");
 
             if (accessToken) {
                 const refreshToken = params.get("refresh_token") || accessToken;
                 persistTokens(accessToken, refreshToken);
-                const userObj = email || name ? {
-                  id: "google-user-id",
+                const userObj = {
+                  id: params.get("user_id") || email || "google-user",
                   email: email || "user@google.com",
                   full_name: name || (email ? email.split("@")[0] : "Google User"),
+                  picture: picture || null,
                   created_at: new Date().toISOString(),
-                } : null;
+                };
 
-                if (userObj) {
-                  localStorage.setItem("insight_user_profile", JSON.stringify(userObj));
-                }
+                localStorage.setItem("insight_user_profile", JSON.stringify(userObj));
 
                 useAuthStore.setState({
                     accessToken,
                     refreshToken,
                     isAuthenticated: true,
-                    user: userObj || useAuthStore.getState().user,
+                    user: userObj,
                 });
                 window.history.replaceState({}, document.title, window.location.pathname);
                 setCurrentView("dashboard");

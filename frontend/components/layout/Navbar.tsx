@@ -19,6 +19,7 @@ import ProfileModal from "@/components/dashboard/ProfileModal";
 import FullProfileModal from "@/components/dashboard/FullProfileModal";
 import SettingsModal from "@/components/dashboard/SettingsModal";
 import SubscriptionModal from "@/components/dashboard/SubscriptionModal";
+import { useAuthStore } from "@/lib/auth";
 
 interface LandingNavItem {
     label: string;
@@ -86,6 +87,9 @@ export default function Navbar({
     const [isFullProfileModalOpen, setIsFullProfileModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+    const user = useAuthStore((s) => s.user);
+    const userPicture = (user as any)?.picture || null;
+    const userInitial = user?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U";
     const [theme, setTheme] = useState("dark");
 
     useEffect(() => {
@@ -468,7 +472,18 @@ export default function Navbar({
                         hover:bg-white/10
                       "
                                         >
-                                            <UserCircle2 size={24} />
+                                            {userPicture ? (
+                                                <img
+                                                    src={userPicture}
+                                                    alt={user?.full_name || "User"}
+                                                    className="h-6 w-6 rounded-full object-cover ring-1 ring-cyan-400/50"
+                                                    referrerPolicy="no-referrer"
+                                                />
+                                            ) : (
+                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-xs font-bold text-white">
+                                                    {userInitial}
+                                                </div>
+                                            )}
 
                                             <ChevronDown
                                                 size={16}

@@ -25,16 +25,12 @@ const footerLinks = {
 
 const socials = [
     {
-        name: "GitHub",
-        href: "https://github.com",
-    },
-    {
         name: "LinkedIn",
-        href: "https://linkedin.com",
+        href: "https://www.linkedin.com/in/anugrah-yadav-aba8372a6/",
     },
     {
         name: "Email",
-        href: "mailto:hello@insight.ai",
+        href: "mailto:anugrahyadav1594@gmail.com",
     },
 ];
 

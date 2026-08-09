@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   /**
    * Call once on app mount to rehydrate tokens from localStorage.
-   * Does NOT hit the network — pair with `fetchMe()` if you need the profile.
+   * Loads the stored Google profile from localStorage immediately.
    */
   hydrate: () => {
     if (typeof window === "undefined") return;
@@ -73,30 +73,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const refreshToken = localStorage.getItem(REFRESH_KEY) || localStorage.getItem("refresh_token");
     const storedProfile = localStorage.getItem("insight_user_profile");
 
-    let parsedUser = null;
+    let parsedUser: MeResponse | null = null;
     if (storedProfile) {
       try { parsedUser = JSON.parse(storedProfile); } catch {}
     }
 
     if (accessToken) {
-      const isDemo = accessToken.startsWith("demo-");
       set({
         accessToken,
         refreshToken,
         isAuthenticated: true,
-        user: parsedUser || (isDemo
-          ? {
-              id: "demo-user-id",
-              email: "demo@insight.com",
-              full_name: "Demo Investor",
-              created_at: new Date().toISOString(),
-            }
-          : get().user),
+        user: parsedUser || get().user,
       });
     }
   },
 
-  // ── Login ────────────────────────────────────────────────────────────────
+  // ── Login (kept for API compatibility, but not used in Google-only flow) ──
 
   login: async (email, password) => {
     set({ isLoading: true });
@@ -123,7 +115,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // ── Register ─────────────────────────────────────────────────────────────
+  // ── Register (kept for API compatibility, but not used in Google-only flow)
 
   register: async (email, password, fullName) => {
     set({ isLoading: true });
@@ -194,30 +186,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   fetchMe: async () => {
     const { accessToken } = get();
-    const storedProfile = typeof window !== "undefined" ? localStorage.getItem("insight_user_profile") : null;
-    let parsedUser = null;
-    if (storedProfile) {
-      try { parsedUser = JSON.parse(storedProfile); } catch {}
-    }
+    if (!accessToken) return;
 
-    if (accessToken?.startsWith("demo-") || parsedUser) {
-      set({
-        user: parsedUser || get().user || {
-          id: "demo-user-id",
-          email: "demo@insight.com",
-          full_name: "Demo Investor",
-          created_at: new Date().toISOString(),
-        },
-        isAuthenticated: true,
-      });
-      return;
-    }
+    // Try fetching the real user profile from backend
     try {
       const user = await apiClient.get<MeResponse>("/auth/me");
       if (user) {
         localStorage.setItem("insight_user_profile", JSON.stringify(user));
+        set({ user, isAuthenticated: true });
       }
-      set({ user });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         // Token is invalid — attempt a silent refresh
@@ -227,16 +204,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             const user = await apiClient.get<MeResponse>("/auth/me");
             if (user) {
               localStorage.setItem("insight_user_profile", JSON.stringify(user));
+              set({ user });
             }
-            set({ user });
             return;
           } catch {
-            // Still failing — clear
+            // Still failing — fall through to stored profile
           }
         }
-        get().clearAuth();
       }
-      throw err;
+
+      // Fall back to stored profile (from Google callback)
+      const storedProfile = typeof window !== "undefined"
+        ? localStorage.getItem("insight_user_profile")
+        : null;
+      if (storedProfile) {
+        try {
+          const parsed = JSON.parse(storedProfile);
+          set({ user: parsed, isAuthenticated: true });
+        } catch {}
+      }
     }
   },
 

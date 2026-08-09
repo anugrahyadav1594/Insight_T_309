@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Mail, Edit2, Check, X as Cancel } from "lucide-react";
+import { X, User, Mail, Shield } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 
 interface FullProfileModalProps {
@@ -23,30 +23,10 @@ export default function FullProfileModal({ isOpen, onClose }: FullProfileModalPr
         }
     }, [user]);
 
+    const picture = (user as any)?.picture || null;
     const avatar = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
-    const subscription = email === "demo@insight.com" ? "Demo Account" : "Pro Tier";
-    const plan = email === "demo@insight.com" ? "Free Demo" : "₹499/month";
-
-    // Editing state
-    const [editingField, setEditingField] = useState<"name" | "email" | null>(null);
-    const [tempValue, setTempValue] = useState("");
-
-    const handleEdit = (field: "name" | "email") => {
-        setEditingField(field);
-        setTempValue(field === "name" ? name : email);
-    };
-
-    const handleSave = () => {
-        if (editingField === "name") setName(tempValue);
-        if (editingField === "email") setEmail(tempValue);
-        setEditingField(null);
-        // Optional: show a success toast or alert
-        alert("Profile updated successfully!");
-    };
-
-    const handleCancel = () => {
-        setEditingField(null);
-    };
+    const subscription = "Pro Tier";
+    const plan = "₹499/month";
 
     return (
         <AnimatePresence>
@@ -93,81 +73,53 @@ export default function FullProfileModal({ isOpen, onClose }: FullProfileModalPr
                         </h3>
 
                         <div className="flex flex-col items-center gap-4">
-                            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-3xl font-bold text-white">
-                                {avatar}
-                            </div>
+                            {picture ? (
+                                <img
+                                    src={picture}
+                                    alt={name}
+                                    className="h-24 w-24 rounded-full object-cover ring-3 ring-cyan-400/40 shadow-lg shadow-cyan-500/20"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-3xl font-bold text-white">
+                                    {avatar}
+                                </div>
+                            )}
 
-                            <div className="w-full space-y-4">
-                                {/* Name field */}
+                            <div className="w-full space-y-3">
+                                {/* Name field — read-only from Google */}
                                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                                    <span className="text-slate-400">Name</span>
-                                    {editingField === "name" ? (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="text"
-                                                value={tempValue}
-                                                onChange={(e) => setTempValue(e.target.value)}
-                                                className="rounded-lg bg-black/40 px-3 py-1 text-sm text-white outline-none border border-white/10 focus:border-cyan-400/50"
-                                                autoFocus
-                                            />
-                                            <button onClick={handleSave} className="text-emerald-400 hover:text-emerald-300">
-                                                <Check className="h-4 w-4" />
-                                            </button>
-                                            <button onClick={handleCancel} className="text-red-400 hover:text-red-300">
-                                                <Cancel className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <span className="text-white font-medium">{name}</span>
-                                            <button
-                                                onClick={() => handleEdit("name")}
-                                                className="rounded-lg p-1 text-slate-400 transition hover:bg-white/5 hover:text-white"
-                                            >
-                                                <Edit2 className="h-4 w-4" />
-                                            </button>
-                                        </>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4 text-slate-400" />
+                                        <span className="text-slate-400 text-sm">Name</span>
+                                    </div>
+                                    <span className="text-white font-medium">{name}</span>
                                 </div>
 
-                                {/* Email field */}
+                                {/* Email field — read-only from Google */}
                                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                                    <span className="text-slate-400">Email</span>
-                                    {editingField === "email" ? (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="email"
-                                                value={tempValue}
-                                                onChange={(e) => setTempValue(e.target.value)}
-                                                className="rounded-lg bg-black/40 px-3 py-1 text-sm text-white outline-none border border-white/10 focus:border-cyan-400/50"
-                                                autoFocus
-                                            />
-                                            <button onClick={handleSave} className="text-emerald-400 hover:text-emerald-300">
-                                                <Check className="h-4 w-4" />
-                                            </button>
-                                            <button onClick={handleCancel} className="text-red-400 hover:text-red-300">
-                                                <Cancel className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <span className="text-white font-medium">{email}</span>
-                                            <button
-                                                onClick={() => handleEdit("email")}
-                                                className="rounded-lg p-1 text-slate-400 transition hover:bg-white/5 hover:text-white"
-                                            >
-                                                <Edit2 className="h-4 w-4" />
-                                            </button>
-                                        </>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="h-4 w-4 text-slate-400" />
+                                        <span className="text-slate-400 text-sm">Email</span>
+                                    </div>
+                                    <span className="text-white font-medium">{email}</span>
+                                </div>
+
+                                {/* Auth provider */}
+                                <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="h-4 w-4 text-slate-400" />
+                                        <span className="text-slate-400 text-sm">Sign-in</span>
+                                    </div>
+                                    <span className="text-cyan-400 font-medium text-sm">Google Account</span>
                                 </div>
 
                                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                                    <span className="text-slate-400">Subscription</span>
+                                    <span className="text-slate-400 text-sm">Subscription</span>
                                     <span className="text-cyan-400 font-medium">{subscription}</span>
                                 </div>
                                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                                    <span className="text-slate-400">Plan</span>
+                                    <span className="text-slate-400 text-sm">Plan</span>
                                     <span className="text-white font-medium">{plan}</span>
                                 </div>
                             </div>

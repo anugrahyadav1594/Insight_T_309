@@ -51,6 +51,7 @@ export interface UserOut {
   id: string;
   email: string;
   full_name: string;
+  picture?: string | null;
   created_at: string;
 }
 
@@ -73,6 +74,7 @@ export interface MeResponse {
   id: string;
   email: string;
   full_name: string;
+  picture?: string | null;
   created_at: string;
 }
 

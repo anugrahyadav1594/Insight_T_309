@@ -11,6 +11,7 @@ export default function GoogleCallback() {
     const refresh = params.get("refresh_token") || access;
     const email = params.get("email");
     const name = params.get("name") || params.get("full_name");
+    const picture = params.get("picture") || params.get("avatar");
 
     if (access) {
       localStorage.setItem(TOKEN_KEY, access);
@@ -19,18 +20,20 @@ export default function GoogleCallback() {
         localStorage.setItem(REFRESH_KEY, refresh);
         localStorage.setItem("refresh_token", refresh);
       }
-      if (email || name) {
-        const userObj = {
-          id: "google-user-id",
-          email: email || "user@google.com",
-          full_name: name || (email ? email.split("@")[0] : "Google User"),
-          created_at: new Date().toISOString(),
-        };
-        localStorage.setItem("insight_user_profile", JSON.stringify(userObj));
-      }
-      window.location.href = "/dashboard";
+
+      const userObj = {
+        id: params.get("user_id") || email || "google-user",
+        email: email || "user@google.com",
+        full_name: name || (email ? email.split("@")[0] : "Google User"),
+        picture: picture || null,
+        created_at: new Date().toISOString(),
+      };
+      localStorage.setItem("insight_user_profile", JSON.stringify(userObj));
+
+      // Navigate to main page which will hydrate and show dashboard
+      window.location.href = "/";
     } else {
-      window.location.href = "/login?error=google";
+      window.location.href = "/?error=google";
     }
   }, []);
 

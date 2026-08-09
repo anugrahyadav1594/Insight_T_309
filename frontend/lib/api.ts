@@ -82,9 +82,6 @@ async function request<T>(
   if (!skipAuth) {
     const token = getStoredToken();
     if (token) {
-      if (token.startsWith("demo-")) {
-        throw new ApiError(401, "DEMO_MODE", "Demo account mode active");
-      }
       headers["Authorization"] = `Bearer ${token}`;
     } else {
       throw new ApiError(401, "UNAUTHORIZED", "Authentication required");

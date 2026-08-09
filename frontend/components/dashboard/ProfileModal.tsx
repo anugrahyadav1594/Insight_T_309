@@ -23,8 +23,9 @@ export default function ProfileModal({
 
     const name = user?.full_name || "Account User";
     const email = user?.email || "user@insight.com";
+    const picture = (user as any)?.picture || null;
     const avatar = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
-    const subscription = email === "demo@insight.com" ? "Demo" : "Pro Plan";
+    const subscription = "Pro Plan";
 
     return (
         <AnimatePresence>
@@ -68,9 +69,18 @@ export default function ProfileModal({
 
                         {/* User Info */}
                         <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-4">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-2xl font-bold text-white">
-                                {avatar}
-                            </div>
+                            {picture ? (
+                                <img
+                                    src={picture}
+                                    alt={name}
+                                    className="h-16 w-16 rounded-full object-cover ring-2 ring-cyan-400/40"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-2xl font-bold text-white">
+                                    {avatar}
+                                </div>
+                            )}
                             <div>
                                 <h3 className="text-lg font-bold text-white">{name}</h3>
                                 <p className="text-sm text-slate-400">{email}</p>

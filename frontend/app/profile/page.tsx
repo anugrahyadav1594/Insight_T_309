@@ -61,13 +61,24 @@ function ThemeDropdown({
     );
 }
 
+import { useAuthStore } from "@/lib/auth";
+
 export default function ProfilePage() {
     const router = useRouter();
-    const [name, setName] = useState(USER_DATA.name);
-    const [email, setEmail] = useState(USER_DATA.email);
-    const [theme, setTheme] = useState(USER_DATA.theme);
-    const [notifications, setNotifications] = useState(USER_DATA.notifications);
-    const [oldPassword, setOldPassword] = useState("");
+    const user = useAuthStore((s) => s.user);
+    const logout = useAuthStore((s) => s.logout);
+
+    const [name, setName] = useState(user?.full_name || "Account User");
+    const [email, setEmail] = useState(user?.email || "user@insight.com");
+    const [theme, setTheme] = useState("dark");
+    const [notifications, setNotifications] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            setName(user.full_name || "Account User");
+            setEmail(user.email || "user@insight.com");
+        }
+    }, [user]);
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [editingField, setEditingField] = useState<"name" | "email" | null>(null);

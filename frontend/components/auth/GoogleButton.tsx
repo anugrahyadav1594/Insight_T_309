@@ -4,9 +4,10 @@ import { FcGoogle } from "react-icons/fc";
 
 interface Props {
     onClick?: () => void;
+    label?: string;
 }
 
-export default function GoogleButton({ onClick }: Props) {
+export default function GoogleButton({ onClick, label = "Continue with Google" }: Props) {
     return (
         <button
             type="button"
@@ -22,20 +23,19 @@ export default function GoogleButton({ onClick }: Props) {
         border-white/10
         bg-white
         px-5
-        py-3
-        font-medium
+        py-3.5
+        font-semibold
         text-black
         transition-all
         duration-200
         hover:scale-[1.02]
         hover:shadow-xl
-        hover:bg-gray-100
+        hover:bg-gray-50
         active:scale-[0.98]
       "
         >
             <FcGoogle size={22} />
-
-            <span>Continue with Google</span>
+            <span>{label}</span>
         </button>
     );
 }
