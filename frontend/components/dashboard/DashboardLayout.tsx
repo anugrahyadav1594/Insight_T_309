@@ -8,6 +8,7 @@ import Watchlist from "./Watchlist";
 import CompanyAnalysis from "./CompanyAnalysis";
 import Screener from "./Screener";
 import type { DashboardTab } from "../layout/Navbar";
+import PortfolioTab from "@/components/portfolio/PortfolioTab";
 
 interface DashboardLayoutProps {
   isAuthenticated: boolean;
