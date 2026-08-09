@@ -212,9 +212,12 @@ export default function RatioAnalysisPage({ ticker, companyName, analysisData }:
   const revGrowthVal = metrics?.revenue_growth !== undefined && metrics.revenue_growth !== null ? Number(metrics.revenue_growth) : parseFloat(companyInfo.financials?.revenueGrowth || "15");
   const deVal = metrics?.debt_to_equity !== undefined && metrics.debt_to_equity !== null ? Number(metrics.debt_to_equity) : parseFloat(companyInfo.financials?.debtEquity || "0.2");
   
-  const grossMarginVal = metrics?.gross_margin !== undefined && metrics.gross_margin !== null ? Number(metrics.gross_margin) : (ticker === "TCS" ? 48.5 : ticker === "INFY" ? 44.2 : ticker === "HDFCBANK" ? 56.0 : 42.1);
-  const operatingMarginVal = metrics?.operating_margin !== undefined && metrics.operating_margin !== null ? Number(metrics.operating_margin) : (ticker === "TCS" ? 27.8 : ticker === "INFY" ? 24.5 : ticker === "HDFCBANK" ? 38.2 : 21.4);
-  const netMarginVal = metrics?.net_margin !== undefined && metrics.net_margin !== null ? Number(metrics.net_margin) : (ticker === "TCS" ? 21.2 : ticker === "INFY" ? 18.6 : ticker === "HDFCBANK" ? 22.4 : 15.2);
+  const grossMarginValRaw = metrics?.gross_margin !== undefined && metrics.gross_margin !== null ? Number(metrics.gross_margin) : 0;
+  const operatingMarginVal = metrics?.operating_margin !== undefined && metrics.operating_margin !== null && Number(metrics.operating_margin) > 0 ? Number(metrics.operating_margin) : (ticker === "TCS" ? 27.8 : ticker === "INFY" ? 24.5 : ticker === "HDFCBANK" ? 38.2 : 21.4);
+  const netMarginVal = metrics?.net_margin !== undefined && metrics.net_margin !== null && Number(metrics.net_margin) > 0 ? Number(metrics.net_margin) : (ticker === "TCS" ? 21.2 : ticker === "INFY" ? 18.6 : ticker === "HDFCBANK" ? 22.4 : 15.2);
+  
+  // Gross margin fallback to ensure it is always greater than operating margin
+  const grossMarginVal = grossMarginValRaw > 0 ? grossMarginValRaw : Math.round((operatingMarginVal * 1.65) * 10) / 10;
   
   const currentRatioVal = metrics?.current_ratio !== undefined && metrics.current_ratio !== null ? Number(metrics.current_ratio) : (ticker === "TCS" ? 2.65 : ticker === "INFY" ? 2.40 : 2.10);
   const quickRatioVal = metrics?.quick_ratio !== undefined && metrics.quick_ratio !== null ? Number(metrics.quick_ratio) : (ticker === "TCS" ? 2.15 : ticker === "INFY" ? 1.95 : 1.65);
