@@ -21,6 +21,7 @@ from app.schemas.portfolio import (
     PortfolioDetail,
     PortfolioListResponse,
     PortfolioOut,
+    WhatIfRequest,
 )
 from app.services.portfolio_service import portfolio_service
 from app.utils import cache as cache_util
@@ -101,6 +102,24 @@ async def delete_holding(
     await portfolio_service.delete_holding(db, current_user.id, portfolio_id, holding_id)
     await _invalidate_dashboard(current_user.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{portfolio_id}/what-if", response_model=SuccessEnvelope[PortfolioDetail])
+async def what_if_portfolio(
+    portfolio_id: uuid.UUID,
+    body: WhatIfRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Compute portfolio metrics/scores for a hypothetical set of holdings.
+
+    Applies add/update/remove changes in memory and returns the recomputed
+    summary, sector concentration and scores — nothing is persisted.
+    """
+    result = await portfolio_service.what_if(
+        db, current_user.id, portfolio_id, body.holdings
+    )
+    return ok(result)
 
 
 @router.post("/{portfolio_id}/analyze", response_model=SuccessEnvelope[PortfolioAnalysisResponse])

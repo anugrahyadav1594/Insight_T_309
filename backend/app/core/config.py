@@ -105,6 +105,14 @@ class Settings(BaseSettings):
     QUOTE_STALE_AFTER_SECONDS: int = 900          # 15 min
     PROFILE_STALE_AFTER_SECONDS: int = 86400      # 24 h
 
+    # --- Auto-refresh scheduler ---------------------------------------------------
+    # Enable/disable the periodic background refresh of all companies.
+    AUTO_REFRESH_ENABLED: bool = False
+    # How often (seconds) the scheduler refreshes the full company universe.
+    AUTO_REFRESH_INTERVAL_SECONDS: int = 1800     # 30 minutes
+    # If True, refresh companies whose cached data is stale even if never synced.
+    AUTO_REFRESH_FORCE_SEEDED: bool = True
+
     # --- Misc ---------------------------------------------------------------------
     REQUEST_ID_HEADER: str = "X-Request-ID"
 

@@ -714,3 +714,18 @@ export interface CompanyAnalysisResponse {
   source: string;
   stale?: boolean;
 }
+
+
+// Portfolio "What if" Simulator
+export type WhatIfAction = "add" | "update" | "remove";
+
+export interface WhatIfHolding {
+  ticker: string;
+  quantity?: number | null;
+  average_buy_price?: number | null;
+  action: WhatIfAction;
+}
+
+export interface WhatIfRequest {
+  holdings: WhatIfHolding[];
+}

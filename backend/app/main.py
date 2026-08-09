@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Any
@@ -63,7 +64,26 @@ async def lifespan(app: FastAPI):
     configure_logging()
     app.state.limiter = limiter
     logger.info("%s starting (env=%s)", settings.APP_NAME, settings.ENVIRONMENT)
+
+    # Start the scheduled auto-refresh background task (no-op if disabled).
+    scheduler_task = None
+    if settings.AUTO_REFRESH_ENABLED:
+        from app.workers.scheduler import _scheduler_task
+
+        scheduler_task = _scheduler_task()
+        if scheduler_task is not None:
+            logger.info("auto-refresh scheduler task scheduled")
+
     yield
+
+    if scheduler_task is not None:
+        scheduler_task.cancel()
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
+        except Exception:  # noqa: BLE001
+            logger.warning("scheduler task shutdown error", exc_info=True)
     await cache.close()
     logger.info("%s shutdown", settings.APP_NAME)
 
@@ -71,12 +91,45 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title=f"{settings.APP_NAME} API",
-        description="AI-powered financial intelligence platform for Indian retail investors.",
+        description=(
+            "AI-powered financial intelligence platform for Indian retail investors.\n\n"
+            "## Quick start (demo user)\n"
+            "Login: `demo@insight.com` / `Demo@12345`\n\n"
+            "## Live market data (FMP)\n"
+            "When `MARKET_DATA_PROVIDER=fmp` and a valid `FMP_API_KEY` is set, calls to "
+            "`/companies/{ticker}` and `/companies/movers/list` pull **real** prices and "
+            "fundamentals from Financial Modeling Prep. Data is cached (Redis) then stored "
+            "(PostgreSQL) before serving.\n\n"
+            "## Test use-cases (run these in order)\n"
+            "1. **Auth** — `POST /api/v1/auth/login` (demo credentials above) → copy `access_token`.\n"
+            "2. **Authorize** — click **Authorize** and paste `Bearer <access_token>`.\n"
+            "3. **Live analysis** — `GET /api/v1/companies/TCS` → real FMP price, scores, AI summary.\n"
+            "4. **Gainers/Losers** — `GET /api/v1/companies/movers/list?period=1D&direction=gainers`.\n"
+            "5. **IPO calendar** — `GET /api/v1/ipos` (ongoing / upcoming / ended).\n"
+            "6. **Screener** — `POST /api/v1/screener/query` (structured or natural language).\n"
+            "7. **AI chat** — `POST /api/v1/ai/chat` (grounded in company data).\n"
+            "8. **Portfolio** — create, add a holding, `POST /.../analyze`.\n\n"
+            "### Updating / refreshing data\n"
+            "Run `python -m scripts.refresh_all` (in the container) to pull fresh FMP data for all "
+            "companies. Individual analysis calls auto-refresh when cached data is stale "
+            "(quotes > 15 min, profiles > 24 h)."
+        ),
         version="1.0.0",
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        openapi_tags=[
+            {"name": "system", "description": "Liveness & dependency health"},
+            {"name": "auth", "description": "Register, login, refresh, logout, me"},
+            {"name": "companies", "description": "Search, analysis, gainers/losers (movers)"},
+            {"name": "ipos", "description": "IPO calendar (ongoing / upcoming / ended)"},
+            {"name": "dashboard", "description": "Single aggregated home payload"},
+            {"name": "portfolios", "description": "Portfolio CRUD, holdings math, AI analysis"},
+            {"name": "watchlists", "description": "Watchlist CRUD with live enrichment"},
+            {"name": "screener", "description": "Structured + natural-language stock screening"},
+            {"name": "ai", "description": "Contextual AI chat grounded in backend data"},
+        ],
     )
 
     setup_middleware(app)
