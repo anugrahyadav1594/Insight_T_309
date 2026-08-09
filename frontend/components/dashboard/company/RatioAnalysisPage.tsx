@@ -207,6 +207,11 @@ export default function RatioAnalysisPage({ ticker, companyName, analysisData }:
   const metrics = analysisData?.calculated_metrics;
   const rawData = analysisData?.raw_data;
 
+  // Extract financial metrics with company-specific seeds & backend response overrides
+  const roeVal = metrics?.roe !== undefined && metrics.roe !== null ? Number(metrics.roe) : parseFloat(companyInfo.financials?.roe || "18");
+  const revGrowthVal = metrics?.revenue_growth !== undefined && metrics.revenue_growth !== null ? Number(metrics.revenue_growth) : parseFloat(companyInfo.financials?.revenueGrowth || "15");
+  const deVal = metrics?.debt_to_equity !== undefined && metrics.debt_to_equity !== null ? Number(metrics.debt_to_equity) : parseFloat(companyInfo.financials?.debtEquity || "0.2");
+
   // Check if gross margin is valid (> 0, non-null, non-NaN)
   const hasGrossMargin = useMemo(() => {
     const gm = metrics?.gross_margin;
@@ -264,22 +269,33 @@ export default function RatioAnalysisPage({ ticker, companyName, analysisData }:
     };
   }, [baseRev, seed, hasGrossMargin, grossMarginVal, operatingMarginVal, netMarginVal, roeVal, revGrowthVal, currentRatioVal, deVal]);
 
-  const profitability: RatioItem[] = [
-    { id: "roe", title: "ROE", value: `${roeVal}%`, status: roeVal > 15 ? "Good" : "Fair" },
-    { id: "roce", title: "ROCE", value: `${(roeVal * 1.12).toFixed(1)}%`, status: roeVal > 12 ? "Good" : "Fair" },
-    { id: "opm", title: "OPERATING MARGIN", value: `${operatingMarginVal.toFixed(1)}%`, status: operatingMarginVal > 15 ? "Good" : "Fair" },
-    { id: "npm", title: "NET MARGIN", value: `${netMarginVal.toFixed(1)}%`, status: netMarginVal > 10 ? "Good" : "Fair" },
-  ];
+  const profitability: RatioItem[] = useMemo(() => {
+    const items: RatioItem[] = [
+      { id: "roe", title: "ROE", value: `${roeVal}%`, status: roeVal > 15 ? "Good" : "Fair" },
+      { id: "roce", title: "ROCE", value: `${(roeVal * 1.12).toFixed(1)}%`, status: roeVal > 12 ? "Good" : "Fair" },
+      { id: "opm", title: "OPERATING MARGIN", value: `${operatingMarginVal.toFixed(1)}%`, status: operatingMarginVal > 15 ? "Good" : "Fair" },
+      { id: "npm", title: "NET MARGIN", value: `${netMarginVal.toFixed(1)}%`, status: netMarginVal > 10 ? "Good" : "Fair" },
+    ];
+    if (hasGrossMargin) {
+      items.splice(2, 0, {
+        id: "gm",
+        title: "GROSS MARGIN",
+        value: `${grossMarginVal.toFixed(1)}%`,
+        status: grossMarginVal > 40 ? "Good" : "Fair",
+      });
+    }
+    return items;
+  }, [roeVal, operatingMarginVal, netMarginVal, hasGrossMargin, grossMarginVal]);
 
-  const liquidity: RatioItem[] = [
+  const liquidity: RatioItem[] = useMemo(() => [
     { id: "cr", title: "CURRENT RATIO", value: currentRatioVal.toFixed(2), status: currentRatioVal >= 1.5 ? "Good" : "Fair" },
     { id: "qr", title: "QUICK RATIO", value: quickRatioVal.toFixed(2), status: quickRatioVal >= 1.0 ? "Good" : "Fair" },
-  ];
+  ], [currentRatioVal, quickRatioVal]);
 
-  const leverage: RatioItem[] = [
+  const leverage: RatioItem[] = useMemo(() => [
     { id: "de", title: "DEBT/EQUITY", value: `${deVal}`, status: deVal < 0.5 ? "Good" : "Fair" },
     { id: "ic", title: "INTEREST COVER", value: `${interestCoverageVal.toFixed(1)}x`, status: interestCoverageVal >= 5 ? "Good" : "Fair" },
-  ];
+  ], [deVal, interestCoverageVal]);
 
   const dotFill = isLightMode ? "#ffffff" : "#0a0e1a";
   const tickFill = isLightMode ? "#475569" : "#94a3b8";
