@@ -19,7 +19,7 @@ INSIGHT is a full-stack web application with a React frontend, a modular FastAPI
 │  Tailwind CSS 4 · Zustand   │      JSON responses        │  ├─ services (business logic)             │
 │  Recharts · lightweight-    │                            │  ├─ repositories (data access)            │
 │  charts · framer-motion     │                            │  ├─ engines (scoring & analysis)          │
-└─────────────┬───────────────┘                            │  ├─ integrations/market_data (FMP, Yahoo) │
+└─────────────┬───────────────┘                            │  ├─ integrations/market_data (Yahoo)      │
               │                                            │  ├─ ai (Gemini, deterministic fallback)   │
               │                                            │  └─ workers (background tasks, scheduler) │
    ┌──────────▼───────────┐                                └───────┬───────────────┬───────────────────┘
