@@ -207,17 +207,15 @@ export default function RatioAnalysisPage({ ticker, companyName, analysisData }:
   const metrics = analysisData?.calculated_metrics;
   const rawData = analysisData?.raw_data;
 
-  // Extract financial metrics with company-specific seeds & backend response overrides
-  const roeVal = metrics?.roe !== undefined && metrics.roe !== null ? Number(metrics.roe) : parseFloat(companyInfo.financials?.roe || "18");
-  const revGrowthVal = metrics?.revenue_growth !== undefined && metrics.revenue_growth !== null ? Number(metrics.revenue_growth) : parseFloat(companyInfo.financials?.revenueGrowth || "15");
-  const deVal = metrics?.debt_to_equity !== undefined && metrics.debt_to_equity !== null ? Number(metrics.debt_to_equity) : parseFloat(companyInfo.financials?.debtEquity || "0.2");
-  
-  const grossMarginValRaw = metrics?.gross_margin !== undefined && metrics.gross_margin !== null ? Number(metrics.gross_margin) : 0;
-  const operatingMarginVal = metrics?.operating_margin !== undefined && metrics.operating_margin !== null && Number(metrics.operating_margin) > 0 ? Number(metrics.operating_margin) : (ticker === "TCS" ? 27.8 : ticker === "INFY" ? 24.5 : ticker === "HDFCBANK" ? 38.2 : 21.4);
-  const netMarginVal = metrics?.net_margin !== undefined && metrics.net_margin !== null && Number(metrics.net_margin) > 0 ? Number(metrics.net_margin) : (ticker === "TCS" ? 21.2 : ticker === "INFY" ? 18.6 : ticker === "HDFCBANK" ? 22.4 : 15.2);
-  
-  // Gross margin fallback to ensure it is always greater than operating margin
-  const grossMarginVal = grossMarginValRaw > 0 ? grossMarginValRaw : Math.round((operatingMarginVal * 1.65) * 10) / 10;
+  // Check if gross margin is valid (> 0, non-null, non-NaN)
+  const hasGrossMargin = useMemo(() => {
+    const gm = metrics?.gross_margin;
+    return gm !== undefined && gm !== null && !isNaN(Number(gm)) && Number(gm) > 0;
+  }, [metrics?.gross_margin]);
+
+  const grossMarginVal = hasGrossMargin ? Number(metrics?.gross_margin) : 0;
+  const operatingMarginVal = metrics?.operating_margin !== undefined && metrics.operating_margin !== null && !isNaN(Number(metrics.operating_margin)) && Number(metrics.operating_margin) > 0 ? Number(metrics.operating_margin) : (ticker === "TCS" ? 27.8 : ticker === "INFY" ? 24.5 : ticker === "HDFCBANK" ? 38.2 : 21.4);
+  const netMarginVal = metrics?.net_margin !== undefined && metrics.net_margin !== null && !isNaN(Number(metrics.net_margin)) && Number(metrics.net_margin) > 0 ? Number(metrics.net_margin) : (ticker === "TCS" ? 21.2 : ticker === "INFY" ? 18.6 : ticker === "HDFCBANK" ? 22.4 : 15.2);
   
   const currentRatioVal = metrics?.current_ratio !== undefined && metrics.current_ratio !== null ? Number(metrics.current_ratio) : (ticker === "TCS" ? 2.65 : ticker === "INFY" ? 2.40 : 2.10);
   const quickRatioVal = metrics?.quick_ratio !== undefined && metrics.quick_ratio !== null ? Number(metrics.quick_ratio) : (ticker === "TCS" ? 2.15 : ticker === "INFY" ? 1.95 : 1.65);
@@ -249,11 +247,11 @@ export default function RatioAnalysisPage({ ticker, companyName, analysisData }:
         { year: "FY25", revenue: baseRev, netProfit: Math.round(baseRev * (netMarginVal / 100)) },
       ],
       marginTrends: [
-        { year: "FY21", grossMargin: Math.round((grossMarginVal * 0.90) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.88) * 10) / 10, netMargin: Math.round((netMarginVal * 0.86) * 10) / 10 },
-        { year: "FY22", grossMargin: Math.round((grossMarginVal * 0.93) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.92) * 10) / 10, netMargin: Math.round((netMarginVal * 0.90) * 10) / 10 },
-        { year: "FY23", grossMargin: Math.round((grossMarginVal * 0.96) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.95) * 10) / 10, netMargin: Math.round((netMarginVal * 0.94) * 10) / 10 },
-        { year: "FY24", grossMargin: Math.round((grossMarginVal * 0.98) * 10) / 10, operatingMargin: Math.round((operatingMarginVal * 0.98) * 10) / 10, netMargin: Math.round((netMarginVal * 0.97) * 10) / 10 },
-        { year: "FY25", grossMargin: Math.round(grossMarginVal * 10) / 10, operatingMargin: Math.round(operatingMarginVal * 10) / 10, netMargin: Math.round(netMarginVal * 10) / 10 },
+        { year: "FY21", ...(hasGrossMargin ? { grossMargin: Math.round((grossMarginVal * 0.90) * 10) / 10 } : {}), operatingMargin: Math.round((operatingMarginVal * 0.88) * 10) / 10, netMargin: Math.round((netMarginVal * 0.86) * 10) / 10 },
+        { year: "FY22", ...(hasGrossMargin ? { grossMargin: Math.round((grossMarginVal * 0.93) * 10) / 10 } : {}), operatingMargin: Math.round((operatingMarginVal * 0.92) * 10) / 10, netMargin: Math.round((netMarginVal * 0.90) * 10) / 10 },
+        { year: "FY23", ...(hasGrossMargin ? { grossMargin: Math.round((grossMarginVal * 0.96) * 10) / 10 } : {}), operatingMargin: Math.round((operatingMarginVal * 0.95) * 10) / 10, netMargin: Math.round((netMarginVal * 0.94) * 10) / 10 },
+        { year: "FY24", ...(hasGrossMargin ? { grossMargin: Math.round((grossMarginVal * 0.98) * 10) / 10 } : {}), operatingMargin: Math.round((operatingMarginVal * 0.98) * 10) / 10, netMargin: Math.round((netMarginVal * 0.97) * 10) / 10 },
+        { year: "FY25", ...(hasGrossMargin ? { grossMargin: Math.round(grossMarginVal * 10) / 10 } : {}), operatingMargin: Math.round(operatingMarginVal * 10) / 10, netMargin: Math.round(netMarginVal * 10) / 10 },
       ],
       radarAxes: [
         { subject: "Profitability", value: Math.min(98, Math.max(40, Math.round(roeVal * 3.8))) },
@@ -264,7 +262,7 @@ export default function RatioAnalysisPage({ ticker, companyName, analysisData }:
         { subject: "Valuation", value: Math.min(95, Math.max(40, 90 - (seed % 30))) },
       ],
     };
-  }, [baseRev, seed, grossMarginVal, operatingMarginVal, netMarginVal, roeVal, revGrowthVal, currentRatioVal, deVal]);
+  }, [baseRev, seed, hasGrossMargin, grossMarginVal, operatingMarginVal, netMarginVal, roeVal, revGrowthVal, currentRatioVal, deVal]);
 
   const profitability: RatioItem[] = [
     { id: "roe", title: "ROE", value: `${roeVal}%`, status: roeVal > 15 ? "Good" : "Fair" },
@@ -323,7 +321,9 @@ export default function RatioAnalysisPage({ ticker, companyName, analysisData }:
                 <Tooltip content={<CustomFloatingTooltip unit="%" />} cursor={{ stroke: "rgba(34,211,238,0.3)", strokeDasharray: "4 4" }} isAnimationActive={true} animationDuration={150} animationEasing="ease-out" {...({ followPointer: true } as any)} />
                 <Legend wrapperStyle={{ fontSize: "12px", color: "#94a3b8", paddingTop: "16px" }}
                   formatter={(v) => v === "grossMargin" ? "Gross Margin" : v === "operatingMargin" ? "Operating Margin" : "Net Margin"} iconType="line" />
-                <Line type="monotone" dataKey="grossMargin" stroke="#34d399" strokeWidth={2} dot={{ r: 3, fill: "#34d399" }} activeDot={{ r: 5, stroke: "#34d399", strokeWidth: 2, fill: dotFill }} />
+                {hasGrossMargin && (
+                  <Line type="monotone" dataKey="grossMargin" stroke="#34d399" strokeWidth={2} dot={{ r: 3, fill: "#34d399" }} activeDot={{ r: 5, stroke: "#34d399", strokeWidth: 2, fill: dotFill }} />
+                )}
                 <Line type="monotone" dataKey="operatingMargin" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3, fill: "#22d3ee" }} activeDot={{ r: 5, stroke: "#22d3ee", strokeWidth: 2, fill: dotFill }} />
                 <Line type="monotone" dataKey="netMargin" stroke="#fbbf24" strokeWidth={2} dot={{ r: 3, fill: "#fbbf24" }} activeDot={{ r: 5, stroke: "#fbbf24", strokeWidth: 2, fill: dotFill }} />
               </LineChart>
