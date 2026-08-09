@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search, X, Plus, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import WatchlistHeader from "./watchlist/WatchlistHeader";
 import WatchlistStats from "./watchlist/WatchlistStats";
 import WatchlistSearch from "./watchlist/WatchlistSearch";
 import WatchlistTable from "./watchlist/WatchlistTable";
 import WatchlistEmpty from "./watchlist/WatchlistEmpty";
-import { watchlist as initialWatchlist, getWatchlistStats, type WatchlistStock, type AISignal } from "@/lib/watchlistData";
-import { listWatchlists, getWatchlist, addWatchlistItem, ApiError } from "@/lib/api";
+import { watchlist as initialWatchlist, ALL_STOCK_DATABASE, getWatchlistStats, type WatchlistStock, type AISignal } from "@/lib/watchlistData";
+import { listWatchlists, getWatchlist, addWatchlistItem, removeWatchlistItem, ApiError } from "@/lib/api";
 import type { EnrichedItem } from "@/lib/types";
 
 interface WatchlistProps {
@@ -31,6 +32,26 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addSearch, setAddSearch] = useState("");
+
+  // Sync with localStorage & Company Header Watchlist toggle events
+  useEffect(() => {
+    const syncWatchlist = () => {
+      try {
+        const savedSymbols = localStorage.getItem("insight_user_watchlist_symbols");
+        if (savedSymbols) {
+          const symbols: string[] = JSON.parse(savedSymbols);
+          const updated = ALL_STOCK_DATABASE.filter((s) => symbols.includes(s.symbol.toUpperCase()));
+          setStocks(updated);
+          localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
+        }
+      } catch {}
+    };
+
+    window.addEventListener("insight_watchlist_updated", syncWatchlist);
+    return () => window.removeEventListener("insight_watchlist_updated", syncWatchlist);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,52 +108,44 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
     return () => { cancelled = true; };
   }, []);
 
-  const handleAddStock = async () => {
-    const pool = [
-      { symbol: "TATASTEEL", company: "Tata Steel Ltd", price: 125, change: 1.2, volume: "Normal" as const, aiSignal: "Bullish" as const, aiScore: 82 },
-      { symbol: "INFY", company: "Infosys Ltd", price: 1680, change: 2.1, volume: "High" as const, aiSignal: "Bullish" as const, aiScore: 88 },
-      { symbol: "RELIANCE", company: "Reliance Industries", price: 2510, change: 0.6, volume: "Normal" as const, aiSignal: "Accumulate" as const, aiScore: 84 },
-    ];
-    const next = pool.find((item) => !stocks.some((s) => s.symbol === item.symbol));
-    const tickerToAdd = next ? next.symbol : `MOCK${Math.floor(Math.random() * 1000)}`;
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddStockItem = async (stockItem: WatchlistStock) => {
+    if (stocks.some((s) => s.symbol === stockItem.symbol)) return;
 
     if (activeWatchlistId) {
       try {
-        await addWatchlistItem(activeWatchlistId, tickerToAdd);
+        await addWatchlistItem(activeWatchlistId, stockItem.symbol);
       } catch {
         // Fall back to local UI state addition if server fails or mock
       }
     }
 
-    if (next) {
-      setStocks((prev) => {
-        const updated = [next, ...prev];
-        localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
-        return updated;
-      });
-    } else {
-      const randomId = Math.floor(Math.random() * 1000);
-      const customStock = {
-        symbol: `MOCK${randomId}`,
-        company: `Mock Company ${randomId}`,
-        price: Math.floor(Math.random() * 5000) + 100,
-        change: parseFloat((Math.random() * 10 - 5).toFixed(1)),
-        volume: (Math.random() > 0.5 ? "High" : "Normal") as "High" | "Normal",
-        aiSignal: (Math.random() > 0.5 ? "Bullish" : "Neutral") as AISignal,
-        aiScore: Math.floor(Math.random() * 40) + 60,
-      };
-      setStocks((prev) => {
-        const updated = [customStock, ...prev];
-        localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
-        return updated;
-      });
-    }
+    const updated = [stockItem, ...stocks];
+    setStocks(updated);
+    localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
+
+    const symbols = updated.map((s) => s.symbol.toUpperCase());
+    localStorage.setItem("insight_user_watchlist_symbols", JSON.stringify(symbols));
+    window.dispatchEvent(new Event("insight_watchlist_updated"));
   };
 
-  const handleRemoveStock = (symbol: string) => {
+  const handleRemoveStock = async (symbol: string) => {
+    if (activeWatchlistId) {
+      try {
+        await removeWatchlistItem(activeWatchlistId, symbol);
+      } catch {}
+    }
+
     setStocks((prev) => {
       const updated = prev.filter((s) => s.symbol !== symbol);
       localStorage.setItem("insight_user_watchlist_stocks", JSON.stringify(updated));
+
+      const symbols = updated.map((s) => s.symbol.toUpperCase());
+      localStorage.setItem("insight_user_watchlist_symbols", JSON.stringify(symbols));
+      window.dispatchEvent(new Event("insight_watchlist_updated"));
       return updated;
     });
   };
@@ -174,7 +187,7 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
             ⚠️ Using demo data — {error}
           </div>
         )}
-        <WatchlistHeader onBack={onBack} onAddStock={handleAddStock} />
+        <WatchlistHeader onBack={onBack} onAddStock={handleOpenAddModal} />
 
         {stocks.length > 0 ? (
           <>
@@ -191,7 +204,7 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
               onFilterChange={setActiveFilter}
             />
             {filteredStocks.length > 0 ? (
-              <WatchlistTable stocks={filteredStocks} onViewStock={onViewStock} />
+              <WatchlistTable stocks={filteredStocks} onViewStock={onViewStock} onRemoveStock={handleRemoveStock} />
             ) : (
               <div className="mt-8 text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
                 No stocks match your search/filter criteria.
@@ -199,9 +212,93 @@ export default function Watchlist({ onBack, onViewStock }: WatchlistProps) {
             )}
           </>
         ) : (
-          <WatchlistEmpty onAddStock={handleAddStock} />
+          <WatchlistEmpty onAddStock={handleOpenAddModal} />
         )}
       </div>
+
+      {/* Add Stock Modal */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-gradient-to-b from-[#0c1324]/95 to-[#070b14]/95 p-6 shadow-2xl backdrop-blur-3xl z-10"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                <h3 className="text-lg font-bold text-slate-100">Add Stock to Watchlist</h3>
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="rounded-xl border border-white/10 bg-white/5 p-1.5 text-slate-400 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="relative mb-6">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={addSearch}
+                  onChange={(e) => setAddSearch(e.target.value)}
+                  placeholder="Search company or ticker symbol..."
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-400 outline-none focus:border-cyan-400/50"
+                />
+              </div>
+
+              <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1">
+                {ALL_STOCK_DATABASE.filter((s) =>
+                  s.company.toLowerCase().includes(addSearch.toLowerCase()) ||
+                  s.symbol.toLowerCase().includes(addSearch.toLowerCase())
+                ).map((s) => {
+                  const isAdded = stocks.some((item) => item.symbol === s.symbol);
+                  return (
+                    <div
+                      key={s.symbol}
+                      className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 transition hover:border-cyan-400/40"
+                    >
+                      <div>
+                        <p className="text-sm font-bold text-slate-100">{s.symbol}</p>
+                        <p className="text-xs text-slate-400">{s.company}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-mono font-bold text-slate-300">₹{s.price.toLocaleString("en-IN")}</span>
+                        <button
+                          disabled={isAdded}
+                          onClick={() => handleAddStockItem(s)}
+                          className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                            isAdded
+                              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
+                              : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20 hover:scale-105"
+                          }`}
+                        >
+                          {isAdded ? (
+                            <>
+                              <Check className="h-3.5 w-3.5" /> Added
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-3.5 w-3.5" /> Add
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

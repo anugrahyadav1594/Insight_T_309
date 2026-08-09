@@ -35,5 +35,5 @@ export interface Stock {
   pe: number;
   debtEquity: number;
   aiScore: number;
-  recommendation: "Strong Buy" | "Buy" | "Hold" | "Avoid";
+  recommendation: "Strong Bullish" | "Bullish" | "Neutral" | "Bearish" | "Strong Bearish";
 }

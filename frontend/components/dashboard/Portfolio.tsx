@@ -136,6 +136,7 @@ export default function Portfolio({ onBack, onViewStock }: PortfolioProps) {
           topContributors={topContributors}
           bottomLaggards={bottomLaggards}
           totalValue={totalValue}
+          onViewStock={onViewStock}
         />
         <HoldingsChart holdings={holdingsData} totalValue={totalValue} />
         <HoldingsTable holdings={holdingsData} onViewStock={onViewStock} />

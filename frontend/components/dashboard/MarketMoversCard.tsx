@@ -108,9 +108,10 @@ const MOCK_MOVERS_DATA: Record<PeriodCode, Record<MoverDirection, MoverItem[]>> 
 
 interface MarketMoversCardProps {
   onNavigateToTab?: (tab: string) => void;
+  onViewStock?: (symbol: string) => void;
 }
 
-export default function MarketMoversCard({ onNavigateToTab }: MarketMoversCardProps) {
+export default function MarketMoversCard({ onNavigateToTab, onViewStock }: MarketMoversCardProps) {
   const [direction, setDirection] = useState<MoverDirection>("gainers");
   const [period, setPeriod] = useState<PeriodCode>("1D");
   const [movers, setMovers] = useState<MoverItem[]>(MOCK_MOVERS_DATA["1D"]["gainers"]);
@@ -257,7 +258,7 @@ export default function MarketMoversCard({ onNavigateToTab }: MarketMoversCardPr
               className="space-y-3"
             >
               {movers.map((item, idx) => (
-                <MoverRow key={item.ticker} item={item} index={idx} />
+                <MoverRow key={item.ticker} item={item} index={idx} onViewStock={onViewStock} />
               ))}
             </motion.div>
           </AnimatePresence>
@@ -285,7 +286,7 @@ export default function MarketMoversCard({ onNavigateToTab }: MarketMoversCardPr
   );
 }
 
-function MoverRow({ item, index }: { item: MoverItem; index: number }) {
+function MoverRow({ item, index, onViewStock }: { item: MoverItem; index: number; onViewStock?: (symbol: string) => void }) {
   const isPositive = (item.change_pct ?? 0) >= 0;
 
   return (
@@ -295,7 +296,8 @@ function MoverRow({ item, index }: { item: MoverItem; index: number }) {
       exit={{ opacity: 0, y: -12, scale: 0.98 }}
       transition={{ duration: 0.25, delay: index * 0.04, ease: EASE }}
       whileHover={{ x: 4, transition: HOVER_SPRING }}
-      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3.5 transition-colors duration-300 hover:border-cyan-400/30 hover:bg-white/10"
+      onClick={() => onViewStock?.(item.ticker)}
+      className="flex cursor-pointer items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3.5 transition-all duration-300 hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-md"
     >
       <div className="flex items-center gap-3">
         <div

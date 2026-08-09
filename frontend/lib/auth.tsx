@@ -69,22 +69,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    */
   hydrate: () => {
     if (typeof window === "undefined") return;
-    const accessToken = localStorage.getItem(TOKEN_KEY);
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
+    const accessToken = localStorage.getItem(TOKEN_KEY) || localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem(REFRESH_KEY) || localStorage.getItem("refresh_token");
+    const storedProfile = localStorage.getItem("insight_user_profile");
+
+    let parsedUser = null;
+    if (storedProfile) {
+      try { parsedUser = JSON.parse(storedProfile); } catch {}
+    }
+
     if (accessToken) {
       const isDemo = accessToken.startsWith("demo-");
       set({
         accessToken,
         refreshToken,
         isAuthenticated: true,
-        user: isDemo
+        user: parsedUser || (isDemo
           ? {
               id: "demo-user-id",
               email: "demo@insight.com",
               full_name: "Demo Investor",
               created_at: new Date().toISOString(),
             }
-          : get().user,
+          : get().user),
       });
     }
   },
@@ -100,6 +107,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         { skipAuth: true },
       );
       persistTokens(data.access_token, data.refresh_token);
+      if (data.user) {
+        localStorage.setItem("insight_user_profile", JSON.stringify(data.user));
+      }
       set({
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
@@ -124,6 +134,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         { skipAuth: true },
       );
       persistTokens(data.access_token, data.refresh_token);
+      if (data.user) {
+        localStorage.setItem("insight_user_profile", JSON.stringify(data.user));
+      }
       set({
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
@@ -181,9 +194,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   fetchMe: async () => {
     const { accessToken } = get();
-    if (accessToken?.startsWith("demo-")) {
+    const storedProfile = typeof window !== "undefined" ? localStorage.getItem("insight_user_profile") : null;
+    let parsedUser = null;
+    if (storedProfile) {
+      try { parsedUser = JSON.parse(storedProfile); } catch {}
+    }
+
+    if (accessToken?.startsWith("demo-") || parsedUser) {
       set({
-        user: get().user || {
+        user: parsedUser || get().user || {
           id: "demo-user-id",
           email: "demo@insight.com",
           full_name: "Demo Investor",
@@ -195,6 +214,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     try {
       const user = await apiClient.get<MeResponse>("/auth/me");
+      if (user) {
+        localStorage.setItem("insight_user_profile", JSON.stringify(user));
+      }
       set({ user });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -203,6 +225,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (refreshed) {
           try {
             const user = await apiClient.get<MeResponse>("/auth/me");
+            if (user) {
+              localStorage.setItem("insight_user_profile", JSON.stringify(user));
+            }
             set({ user });
             return;
           } catch {
@@ -220,6 +245,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearAuth: () => {
     if (typeof window !== "undefined") {
       clearTokens();
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("insight_user_profile");
+      localStorage.removeItem("insight_currentView");
+      localStorage.removeItem("insight_hasVisitedDashboard");
+      sessionStorage.clear();
     }
     set({
       accessToken: null,

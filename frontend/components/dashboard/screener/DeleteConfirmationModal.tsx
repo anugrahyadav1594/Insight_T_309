@@ -39,7 +39,7 @@ export default function DeleteConfirmationModal({
               rounded-3xl
               border
               border-white/10
-              bg-[#0B1220]
+              bg-gradient-to-b from-[#0c1324]/95 to-[#070b14]/95
               p-6
               shadow-2xl
               backdrop-blur-3xl
@@ -48,18 +48,18 @@ export default function DeleteConfirmationModal({
                     >
                         <button
                             onClick={onClose}
-                            className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+                            className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:border-cyan-400/30 hover:bg-cyan-500/10 hover:text-cyan-300"
                         >
                             <X size={18} />
                         </button>
 
                         <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-4">
                             <AlertTriangle className="h-6 w-6 text-red-400" />
-                            <h3 className="text-xl font-bold text-white">Delete Preset</h3>
+                            <h3 className="text-xl font-bold text-slate-100">Delete Preset</h3>
                         </div>
 
                         <p className="text-slate-300 mb-6">
-                            Are you sure you want to delete the preset "<span className="font-semibold text-white">{presetName}</span>"? This action cannot be undone.
+                            Are you sure you want to delete the preset "<span className="font-semibold text-slate-100">{presetName}</span>"? This action cannot be undone.
                         </p>
 
                         <div className="flex gap-3">

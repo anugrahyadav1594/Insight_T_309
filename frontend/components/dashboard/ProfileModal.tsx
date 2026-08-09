@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Settings, CreditCard, ArrowRight } from "lucide-react";
+import { useAuthStore } from "@/lib/auth";
 
 interface ProfileModalProps {
     isOpen: boolean;
@@ -11,13 +12,6 @@ interface ProfileModalProps {
     onOpenSubscription: () => void;
 }
 
-const USER_DATA = {
-    name: "Demo User",
-    email: "demo@insight.ai",
-    avatar: "DU",
-    subscription: "Pro",
-};
-
 export default function ProfileModal({
     isOpen,
     onClose,
@@ -25,6 +19,13 @@ export default function ProfileModal({
     onOpenSettings,
     onOpenSubscription,
 }: ProfileModalProps) {
+    const user = useAuthStore((s) => s.user);
+
+    const name = user?.full_name || "Account User";
+    const email = user?.email || "user@insight.com";
+    const avatar = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
+    const subscription = email === "demo@insight.com" ? "Demo" : "Pro Plan";
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -68,13 +69,13 @@ export default function ProfileModal({
                         {/* User Info */}
                         <div className="flex items-center gap-4 border-b border-white/10 pb-4 mb-4">
                             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-2xl font-bold text-white">
-                                {USER_DATA.avatar}
+                                {avatar}
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-white">{USER_DATA.name}</h3>
-                                <p className="text-sm text-slate-400">{USER_DATA.email}</p>
+                                <h3 className="text-lg font-bold text-white">{name}</h3>
+                                <p className="text-sm text-slate-400">{email}</p>
                                 <span className="mt-1 inline-block rounded-full bg-cyan-500/20 px-2.5 py-0.5 text-xs font-semibold text-cyan-300">
-                                    {USER_DATA.subscription}
+                                    {subscription}
                                 </span>
                             </div>
                         </div>

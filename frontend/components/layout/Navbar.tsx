@@ -11,6 +11,8 @@ import {
     LayoutDashboard,
     LogOut,
     User,
+    Sun,
+    Moon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProfileModal from "@/components/dashboard/ProfileModal";
@@ -84,6 +86,32 @@ export default function Navbar({
     const [isFullProfileModalOpen, setIsFullProfileModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+    const [theme, setTheme] = useState("dark");
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const savedTheme = localStorage.getItem("insight_theme") || "dark";
+            setTheme(savedTheme);
+            if (savedTheme === "light") {
+                document.documentElement.classList.add("light");
+            }
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        const nextTheme = theme === "dark" ? "light" : "dark";
+        setTheme(nextTheme);
+        if (typeof window !== "undefined") {
+            localStorage.setItem("insight_theme", nextTheme);
+            if (nextTheme === "light") {
+                document.documentElement.classList.add("light");
+                document.documentElement.classList.remove("dark");
+            } else {
+                document.documentElement.classList.add("dark");
+                document.documentElement.classList.remove("light");
+            }
+        }
+    };
 
     // Build nav items: when in dashboard, prepend a "Home" item that leads to landing
     const dashboardNavItemsWithHome: DashboardNavItem[] = [
@@ -291,7 +319,7 @@ export default function Navbar({
                                 className="h-10 w-auto object-contain drop-shadow-[0_0_12px_rgba(34,211,238,0.45)] transition-all duration-300 hover:drop-shadow-[0_0_18px_rgba(34,211,238,0.7)]"
                             />
                             <img
-                                src="/Text.svg"
+                                src={theme === "light" ? "/241fe054-fc49-4a56-b43e-46aa652f9999.png" : "/Text.svg"}
                                 alt="Insight Text"
                                 className="h-7 w-auto object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] transition-all duration-300 hover:drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]"
                             />
@@ -371,6 +399,15 @@ export default function Navbar({
                                 );
                             })}
                         </div>
+
+                        {/* Theme Toggle Button */}
+                        <button
+                            onClick={toggleTheme}
+                            title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Theme`}
+                            className="flex items-center justify-center p-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 transition-all duration-300 hover:border-cyan-400/40 hover:bg-cyan-500/10 hover:text-cyan-300 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+                        >
+                            {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-cyan-400" />}
+                        </button>
 
                         {/* Desktop Right Side */}
                         <div className="hidden items-center gap-4 lg:flex">

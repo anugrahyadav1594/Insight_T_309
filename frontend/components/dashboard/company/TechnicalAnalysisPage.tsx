@@ -8,6 +8,8 @@ import {
 import { Compass, Sparkles } from "lucide-react";
 import MetricCard from "./shared/MetricCard";
 import TradingSignal from "./shared/TradingSignal";
+import AiAnalysisButton from "./shared/AiAnalysisButton";
+import { motion, AnimatePresence } from "framer-motion";
 import { getCompanyInfo } from "@/lib/companyData";
 import { useMemo } from "react";
 import type { CompanyAnalysisResponse } from "@/lib/types";
@@ -16,6 +18,87 @@ interface Props {
   ticker: string;
   companyName: string;
   analysisData?: CompanyAnalysisResponse | null;
+}
+
+function TimeframeDropdown({ selected, onSelect }: { selected: string; onSelect: (range: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const options = ["1M", "3M", "6M", "1Y", "2Y", "5Y", "Max"];
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className="relative z-30 inline-block text-left">
+      <motion.button
+        whileHover={{ scale: 1.04 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#0c1324]/90 px-4 py-2 text-xs font-semibold text-slate-200 backdrop-blur-xl shadow-lg transition-all duration-300 hover:border-cyan-400/40 hover:text-white"
+      >
+        <span>{selected}</span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="text-cyan-400 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-chevron-down"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </motion.div>
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 mt-2 w-28 overflow-hidden rounded-2xl border border-white/10 bg-[#0c1324]/95 p-1.5 shadow-2xl backdrop-blur-2xl z-50"
+          >
+            {options.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  onSelect(option);
+                  setIsOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
+                  selected === option
+                    ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <span>{option}</span>
+                {selected === option && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                )}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 const INDICATORS = [
@@ -110,6 +193,24 @@ function generateRSI(candles: any[]) {
   return rsiData;
 }
 
+function generateBollinger(candles: any[], period = 20, stdDevMult = 2) {
+  const upper: any[] = [];
+  const lower: any[] = [];
+  const middle: any[] = [];
+  for (let i = 0; i < candles.length; i++) {
+    if (i >= period - 1) {
+      const slice = candles.slice(i - period + 1, i + 1);
+      const mean = slice.reduce((s, c) => s + c.close, 0) / period;
+      const variance = slice.reduce((s, c) => s + Math.pow(c.close - mean, 2), 0) / period;
+      const stdDev = Math.sqrt(variance);
+      middle.push({ time: candles[i].time, value: Math.round(mean * 100) / 100 });
+      upper.push({ time: candles[i].time, value: Math.round((mean + stdDevMult * stdDev) * 100) / 100 });
+      lower.push({ time: candles[i].time, value: Math.round((mean - stdDevMult * stdDev) * 100) / 100 });
+    }
+  }
+  return { upper, lower, middle };
+}
+
 const tData: Record<string, any> = {
   RELIANCE: {
     signal: "HOLD", confidence: 54,
@@ -145,16 +246,20 @@ const tData: Record<string, any> = {
 
 function DiagCard({ title, value, subtitle, status, statusColor, barColor, progress }: any) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0e1a] p-6 hover:border-white/[0.14]">
-      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-10 blur-3xl" style={{ background: barColor }} />
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-400">{title}</p>
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider ${statusColor}`}>{status}</span>
+    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 p-5 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(34,211,238,0.12)] hover:-translate-y-0.5">
+      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-20 blur-3xl" style={{ background: barColor || "#22d3ee" }} />
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-300">{title}</p>
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide ${statusColor}`}>{status}</span>
       </div>
-      <p className="text-4xl font-bold text-white">{value}</p>
-      <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+      <p className="text-3xl font-extrabold text-white tracking-tight font-mono">{value}</p>
+      <p className="mt-1 text-xs font-medium text-slate-400">{subtitle}</p>
       {progress !== undefined && (
-        <div className="mt-5"><div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]"><div className="h-full rounded-full transition-all duration-700" style={{ width: `${progress}%`, backgroundColor: barColor }} /></div></div>
+        <div className="mt-4">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${progress}%`, backgroundColor: barColor || "#34d399" }} />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -162,6 +267,17 @@ function DiagCard({ title, value, subtitle, status, statusColor, barColor, progr
 
 export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
   const [active, setActive] = useState<Record<string, boolean>>(Object.fromEntries(INDICATORS.map(i => [i.id, i.on])));
+  const [hoverData, setHoverData] = useState<{
+    time?: string;
+    open?: number;
+    high?: number;
+    low?: number;
+    close?: number;
+    volume?: number;
+    ma50?: number;
+    ma200?: number;
+  } | null>(null);
+
   const chartRef = useRef<HTMLDivElement>(null);
   const chartApiRef = useRef<IChartApi | null>(null);
   const macdRef = useRef<HTMLDivElement>(null);
@@ -198,18 +314,37 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
   const { candleData, volumeData, ma50, ma200 } = useMemo(() => generateOHLC(basePrice), [basePrice]);
   const { macdLine, signalLine, histogram } = useMemo(() => generateMACD(candleData), [candleData]);
   const rsiData = useMemo(() => generateRSI(candleData), [candleData]);
+  const bollinger = useMemo(() => generateBollinger(candleData), [candleData]);
 
-  // Main candlestick chart
+  const latestCandle = candleData[candleData.length - 1];
+
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const checkTheme = () => setIsLightMode(document.documentElement.classList.contains("light"));
+    checkTheme();
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const chartBg = isLightMode ? "#ffffff" : "#070b14";
+  const chartText = isLightMode ? "#334155" : "#64748b";
+  const chartGrid = isLightMode ? "rgba(148,163,184,0.2)" : "rgba(255,255,255,0.03)";
+  const chartBorder = isLightMode ? "rgba(203,213,225,0.8)" : "rgba(255,255,255,0.06)";
+
+  // Main candlestick chart with crosshair listener for floating info window
   useEffect(() => {
     if (!chartRef.current) return;
     if (chartApiRef.current) { chartApiRef.current.remove(); chartApiRef.current = null; }
 
     const chart = createChart(chartRef.current, {
-      layout: { background: { type: ColorType.Solid, color: "#0a0e1a" }, textColor: "#64748b", fontSize: 11 },
-      grid: { vertLines: { color: "rgba(255,255,255,0.03)" }, horzLines: { color: "rgba(255,255,255,0.03)" } },
+      layout: { background: { type: ColorType.Solid, color: chartBg }, textColor: chartText, fontSize: 11 },
+      grid: { vertLines: { color: chartGrid }, horzLines: { color: chartGrid } },
       crosshair: { mode: CrosshairMode.Normal },
-      rightPriceScale: { borderColor: "rgba(255,255,255,0.06)" },
-      timeScale: { borderColor: "rgba(255,255,255,0.06)", timeVisible: false },
+      rightPriceScale: { borderColor: chartBorder },
+      timeScale: { borderColor: chartBorder, timeVisible: false },
       width: chartRef.current.clientWidth,
       height: 520,
     });
@@ -220,23 +355,78 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
     });
     candleSeries.setData(candleData);
 
-    const volumeSeries = chart.addSeries(HistogramSeries, {
-      color: "#334155", priceFormat: { type: "volume" }, priceScaleId: "vol",
+    let volumeSeries: any = null;
+    if (active.volume) {
+      volumeSeries = chart.addSeries(HistogramSeries, {
+        color: "#334155", priceFormat: { type: "volume" }, priceScaleId: "vol",
+      });
+      volumeSeries.setData(volumeData);
+      volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+    }
+
+    let sma50Series: any = null;
+    if (active.ma50) {
+      sma50Series = chart.addSeries(LineSeries, { color: "#22d3ee", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
+      sma50Series.setData(ma50);
+    }
+
+    let sma200Series: any = null;
+    if (active.ma200) {
+      sma200Series = chart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 2, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+      sma200Series.setData(ma200);
+    }
+
+    if (active.bollinger) {
+      const bbUpper = chart.addSeries(LineSeries, { color: "#ec4899", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+      bbUpper.setData(bollinger.upper);
+      const bbLower = chart.addSeries(LineSeries, { color: "#ec4899", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+      bbLower.setData(bollinger.lower);
+    }
+
+    chart.subscribeCrosshairMove((param) => {
+      if (!param || !param.time || param.point === undefined || param.point.x < 0 || param.point.y < 0) {
+        setHoverData(null);
+        return;
+      }
+      const c = param.seriesData.get(candleSeries) as any;
+      const v = volumeSeries ? (param.seriesData.get(volumeSeries) as any) : null;
+      const s50 = sma50Series ? (param.seriesData.get(sma50Series) as any) : null;
+      const s200 = sma200Series ? (param.seriesData.get(sma200Series) as any) : null;
+
+      if (c) {
+        let timeStr = "";
+        if (typeof param.time === "string") {
+          timeStr = param.time;
+        } else if (typeof param.time === "number") {
+          timeStr = new Date(param.time * 1000).toISOString().split("T")[0];
+        } else if (param.time && typeof param.time === "object" && "year" in param.time) {
+          const bt = param.time as any;
+          timeStr = `${bt.year}-${String(bt.month).padStart(2, "0")}-${String(bt.day).padStart(2, "0")}`;
+        }
+
+        setHoverData({
+          time: timeStr,
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+          volume: v?.value,
+          ma50: s50?.value,
+          ma200: s200?.value,
+        });
+      }
     });
-    volumeSeries.setData(volumeData);
-    volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
-
-    const sma50Series = chart.addSeries(LineSeries, { color: "#22d3ee", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
-    sma50Series.setData(ma50);
-
-    const sma200Series = chart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 2, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
-    sma200Series.setData(ma200);
 
     chartApiRef.current = chart;
     chart.timeScale().fitContent();
 
     const onResize = () => {
-      if (chartRef.current && chartApiRef.current) chartApiRef.current.applyOptions({ width: chartRef.current.clientWidth });
+      if (chartRef.current && chartApiRef.current) {
+        chartApiRef.current.applyOptions({
+          width: chartRef.current.clientWidth,
+          height: 520,
+        });
+      }
     };
     window.addEventListener("resize", onResize);
     return () => {
@@ -244,16 +434,16 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
       chart.remove();
       chartApiRef.current = null;
     };
-  }, [ticker, candleData, volumeData, ma50, ma200]);
+  }, [ticker, candleData, volumeData, ma50, ma200, bollinger, active, isLightMode]);
 
   // MACD sub-chart
   useEffect(() => {
-    if (!macdRef.current) return;
+    if (!macdRef.current || !active.macd) return;
     const chart = createChart(macdRef.current, {
-      layout: { background: { type: ColorType.Solid, color: "#0a0e1a" }, textColor: "#64748b", fontSize: 10 },
-      grid: { vertLines: { color: "rgba(255,255,255,0.03)" }, horzLines: { color: "rgba(255,255,255,0.03)" } },
-      rightPriceScale: { borderColor: "rgba(255,255,255,0.06)" },
-      timeScale: { borderColor: "rgba(255,255,255,0.06)", visible: false },
+      layout: { background: { type: ColorType.Solid, color: chartBg }, textColor: chartText, fontSize: 10 },
+      grid: { vertLines: { color: chartGrid }, horzLines: { color: chartGrid } },
+      rightPriceScale: { borderColor: chartBorder },
+      timeScale: { borderColor: chartBorder, visible: false },
       width: macdRef.current.clientWidth,
       height: 120,
     });
@@ -267,16 +457,16 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
     const onResize = () => { if (macdRef.current) chart.applyOptions({ width: macdRef.current.clientWidth }); };
     window.addEventListener("resize", onResize);
     return () => { window.removeEventListener("resize", onResize); chart.remove(); };
-  }, [histogram, macdLine, signalLine]);
+  }, [histogram, macdLine, signalLine, active.macd, isLightMode]);
 
   // RSI sub-chart
   useEffect(() => {
-    if (!rsiRef.current) return;
+    if (!rsiRef.current || !active.rsi) return;
     const chart = createChart(rsiRef.current, {
-      layout: { background: { type: ColorType.Solid, color: "#0a0e1a" }, textColor: "#64748b", fontSize: 10 },
-      grid: { vertLines: { color: "rgba(255,255,255,0.03)" }, horzLines: { color: "rgba(255,255,255,0.03)" } },
-      rightPriceScale: { borderColor: "rgba(255,255,255,0.06)" },
-      timeScale: { borderColor: "rgba(255,255,255,0.06)" },
+      layout: { background: { type: ColorType.Solid, color: chartBg }, textColor: chartText, fontSize: 10 },
+      grid: { vertLines: { color: chartGrid }, horzLines: { color: chartGrid } },
+      rightPriceScale: { borderColor: chartBorder },
+      timeScale: { borderColor: chartBorder },
       width: rsiRef.current.clientWidth,
       height: 100,
     });
@@ -290,7 +480,14 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
     const onResize = () => { if (rsiRef.current) chart.applyOptions({ width: rsiRef.current.clientWidth }); };
     window.addEventListener("resize", onResize);
     return () => { window.removeEventListener("resize", onResize); chart.remove(); };
-  }, [rsiData]);
+  }, [rsiData, active.rsi, isLightMode]);
+
+  const activeClose = hoverData?.close ?? latestCandle?.close ?? basePrice;
+  const activeOpen = hoverData?.open ?? latestCandle?.open ?? basePrice;
+  const priceDiff = activeClose - activeOpen;
+  const priceDiffPct = activeOpen ? (priceDiff / activeOpen) * 100 : 0;
+
+  const [timeframe, setTimeframe] = useState("1Y");
 
   return (
     <div className="space-y-8">
@@ -298,36 +495,58 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
         <div className="flex flex-wrap gap-2">
           {INDICATORS.map(ind => (
             <button key={ind.id} onClick={() => setActive(p => ({ ...p, [ind.id]: !p[ind.id] }))}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${active[ind.id] ? "bg-blue-500/15 text-blue-300 border border-blue-500/30" : "bg-white/[0.03] text-slate-400 border border-white/[0.08] hover:bg-white/[0.06]"}`}>
+              className={`rounded-full px-4 py-2 text-xs font-bold tracking-wide transition-all duration-300 ${
+                active[ind.id]
+                  ? "bg-gradient-to-r from-cyan-500/30 to-blue-600/30 text-cyan-300 border border-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.3)] scale-[1.04]"
+                  : "bg-white/[0.04] text-slate-400 border border-white/10 hover:border-cyan-400/40 hover:bg-cyan-500/15 hover:text-cyan-300 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:scale-[1.02]"
+              }`}>
               {ind.label}
             </button>
           ))}
         </div>
-        <select defaultValue="1Y" className="rounded-lg border border-white/[0.08] bg-[#0a0e1a] px-4 py-2 text-sm text-slate-300 outline-none">
-          <option>1Y</option><option>6M</option><option>3M</option><option>1M</option>
-        </select>
+        <TimeframeDropdown selected={timeframe} onSelect={setTimeframe} />
       </div>
 
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e1a] p-4">
-        <div className="mb-3 flex items-center justify-between px-2">
-          <h3 className="text-base font-semibold text-white">{companyName}</h3>
-          <div className="flex items-center gap-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "linear-gradient(135deg, #26a65b 50%, #ef5350 50%)" }} /> Price</span>
-            <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-cyan-400" /> SMA 50</span>
-            <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-blue-500" /> MACD</span>
-            <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-amber-400" /> Signal</span>
-            <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-violet-400" /> RSI</span>
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#0c1324]/90 to-[#070b14]/90 p-6 shadow-2xl backdrop-blur-2xl transition-colors hover:border-cyan-400/30">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-white tracking-tight">{companyName}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Interactive Technical Chart · Canvas Engine</p>
+          </div>
+
+          {/* Dynamic Floating OHLC Info Window Bar */}
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-[#070b14]/90 px-4 py-2 text-xs font-mono backdrop-blur-xl shadow-lg">
+            <span className="font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-lg">
+              📅 {hoverData?.time || latestCandle?.time || "Latest"}
+            </span>
+            <span className="text-slate-400">O: <strong className="text-white">₹{(hoverData?.open ?? latestCandle?.open ?? basePrice).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
+            <span className="text-slate-400">H: <strong className="text-emerald-400">₹{(hoverData?.high ?? latestCandle?.high ?? basePrice * 1.02).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
+            <span className="text-slate-400">L: <strong className="text-red-400">₹{(hoverData?.low ?? latestCandle?.low ?? basePrice * 0.98).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
+            <span className="text-slate-400">C: <strong className="text-white">₹{activeClose.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
+            <span className={`font-bold ${priceDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              {priceDiff >= 0 ? "+" : ""}{priceDiff.toFixed(2)} ({priceDiffPct >= 0 ? "+" : ""}{priceDiffPct.toFixed(2)}%)
+            </span>
+            {hoverData?.ma50 && <span className="text-cyan-300 border-l border-white/10 pl-3">SMA50: ₹{hoverData.ma50.toFixed(1)}</span>}
           </div>
         </div>
-        <div ref={chartRef} className="w-full" />
-        <div className="mt-2 border-t border-white/[0.04] pt-2">
-          <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">MACD</div>
-          <div ref={macdRef} className="w-full" />
-        </div>
-        <div className="mt-2 border-t border-white/[0.04] pt-2">
-          <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">RSI</div>
-          <div ref={rsiRef} className="w-full" />
-        </div>
+
+        <div ref={chartRef} className="w-full h-[520px] rounded-xl overflow-hidden" />
+        {active.macd && (
+          <div className="mt-3 border-t border-white/[0.06] pt-3">
+            <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-cyan-400/80 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> MACD Oscillator
+            </div>
+            <div ref={macdRef} className="w-full h-[120px] rounded-lg overflow-hidden" />
+          </div>
+        )}
+        {active.rsi && (
+          <div className="mt-3 border-t border-white/[0.06] pt-3">
+            <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-purple-400/80 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> Relative Strength Index (RSI 14)
+            </div>
+            <div ref={rsiRef} className="w-full h-[100px] rounded-lg overflow-hidden" />
+          </div>
+        )}
       </div>
 
       <TradingSignal signal={d.signal} confidence={d.confidence} explanation={d.explanation} />
@@ -353,10 +572,7 @@ export default function TechnicalAnalysisPage({ ticker, companyName }: Props) {
         <div className="grid gap-4 lg:grid-cols-3">{d.trend.map((x: any) => <DiagCard key={x.title} {...x} />)}</div>
       </div>
 
-      <button className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-white/[0.08] bg-[#0a0e1a] px-6 py-4 text-sm font-medium text-slate-300 transition-all hover:border-white/[0.14] hover:text-white">
-        <Sparkles className="h-4 w-4 text-cyan-400" />
-        Get AI Chart Interpretation
-      </button>
+      <AiAnalysisButton ticker={ticker} companyName={companyName} label="Get AI Chart Interpretation" />
     </div>
   );
 }

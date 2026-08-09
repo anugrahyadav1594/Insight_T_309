@@ -88,7 +88,7 @@ export default function CompanySearch({ onSearch, onSelect, onBack }: CompanySea
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search company (e.g. TCS, INFY, HDFCBANK)..."
-            className="w-full rounded-2xl border border-white/10 bg-black/40 py-3.5 pl-12 pr-4 text-white placeholder-slate-500 outline-none transition focus:border-cyan-400/50"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 py-3.5 pl-12 pr-4 text-slate-200 placeholder-slate-400 outline-none transition-all focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30"
           />
         </div>
 
@@ -99,24 +99,24 @@ export default function CompanySearch({ onSearch, onSelect, onBack }: CompanySea
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="absolute left-0 right-0 mt-2 z-50 rounded-2xl border border-white/10 bg-[#0c1322] p-2 shadow-2xl backdrop-blur-2xl"
+              className="absolute left-0 right-0 mt-2 z-50 rounded-2xl border border-white/10 bg-gradient-to-b from-[#0c1324]/95 to-[#070b14]/95 p-2 shadow-2xl backdrop-blur-2xl"
             >
               {results.length > 0 ? (
                 results.slice(0, 8).map((s) => (
                   <button
                     key={s.ticker}
                     onClick={() => handleSelect(s.ticker)}
-                    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition hover:bg-white/5"
+                    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-all hover:bg-cyan-500/10 hover:border hover:border-cyan-400/30"
                   >
                     <div>
-                      <div className="font-bold text-white text-sm">{s.ticker}</div>
-                      <div className="text-xs text-slate-400">{s.name}</div>
+                      <div className="font-bold text-slate-100 text-sm">{s.ticker}</div>
+                      <div className="text-xs text-slate-400 font-medium">{s.name}</div>
                     </div>
-                    {s.sector && <span className="text-xs font-semibold text-cyan-400">{s.sector}</span>}
+                    {s.sector && <span className="text-xs font-bold text-cyan-400">{s.sector}</span>}
                   </button>
                 ))
               ) : (
-                <div className="px-4 py-3 text-center text-xs text-slate-500">
+                <div className="px-4 py-3 text-center text-xs text-slate-400">
                   No matches found. Try TCS, INFY, HDFCBANK, or RELIANCE
                 </div>
               )}

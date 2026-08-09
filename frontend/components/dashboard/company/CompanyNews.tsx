@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Newspaper, Calendar } from "lucide-react";
+import { Newspaper, Calendar, ExternalLink } from "lucide-react";
 import type { CompanyAnalysisData } from "@/lib/companyData";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -44,24 +44,34 @@ export default function CompanyNews({ data }: CompanyNewsProps) {
 
         {/* Timeline list */}
         <div className="relative border-l border-white/10 pl-6 ml-3 space-y-6">
-          {news.map((item, index) => (
-            <div key={index} className="relative">
-              {/* Dot */}
-              <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-[#0B1220] bg-cyan-400" />
+          {news.map((item, index) => {
+            const href = (item as any).url || `https://www.google.com/search?q=${encodeURIComponent(item.title)}`;
+            return (
+              <a
+                key={index}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group/item block relative rounded-2xl p-3 -ml-3 border border-transparent transition-all duration-300 hover:border-cyan-500/30 hover:bg-cyan-500/10"
+              >
+                {/* Dot */}
+                <div className="absolute -left-[20px] top-4 h-3.5 w-3.5 rounded-full border-2 border-[#0B1220] bg-cyan-400 group-hover/item:scale-125 transition-transform" />
 
-              <div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-                  <Calendar className="h-3 w-3" />
-                  <span>{item.time}</span>
-                  <span>•</span>
-                  <span className="text-cyan-400/80">{item.source}</span>
+                <div>
+                  <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold">
+                    <Calendar className="h-3 w-3" />
+                    <span>{item.time}</span>
+                    <span>•</span>
+                    <span className="text-cyan-400/80 font-mono">{item.source}</span>
+                  </div>
+                  <h4 className="mt-1 text-sm font-bold text-white group-hover/item:text-cyan-300 transition-colors flex items-center justify-between gap-2">
+                    <span>{item.title}</span>
+                    <ExternalLink className="h-4 w-4 shrink-0 text-cyan-400 opacity-70 group-hover/item:opacity-100 group-hover/item:translate-x-0.5 group-hover/item:-translate-y-0.5 transition-all" />
+                  </h4>
                 </div>
-                <h4 className="mt-1 text-sm font-bold text-white hover:text-cyan-300 transition-colors cursor-pointer">
-                  {item.title}
-                </h4>
-              </div>
-            </div>
-          ))}
+              </a>
+            );
+          })}
         </div>
       </div>
 

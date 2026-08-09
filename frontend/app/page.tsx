@@ -34,18 +34,43 @@ export default function Home() {
         setIsMounted(true);
         hydrate();
 
+        if (typeof window !== "undefined") {
+            const savedTheme = localStorage.getItem("insight_theme");
+            if (savedTheme === "light") {
+                document.documentElement.classList.add("light");
+                document.documentElement.classList.remove("dark");
+            } else {
+                document.documentElement.classList.add("dark");
+                document.documentElement.classList.remove("light");
+            }
+        }
+
         // Handle OAuth Callback Tokens in URL (?access_token=...&refresh_token=...)
         if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
             const accessToken = params.get("access_token");
-            const refreshToken = params.get("refresh_token");
+            const email = params.get("email");
+            const name = params.get("name") || params.get("full_name");
 
-            if (accessToken && refreshToken) {
+            if (accessToken) {
+                const refreshToken = params.get("refresh_token") || accessToken;
                 persistTokens(accessToken, refreshToken);
+                const userObj = email || name ? {
+                  id: "google-user-id",
+                  email: email || "user@google.com",
+                  full_name: name || (email ? email.split("@")[0] : "Google User"),
+                  created_at: new Date().toISOString(),
+                } : null;
+
+                if (userObj) {
+                  localStorage.setItem("insight_user_profile", JSON.stringify(userObj));
+                }
+
                 useAuthStore.setState({
                     accessToken,
                     refreshToken,
                     isAuthenticated: true,
+                    user: userObj || useAuthStore.getState().user,
                 });
                 window.history.replaceState({}, document.title, window.location.pathname);
                 setCurrentView("dashboard");
@@ -96,6 +121,13 @@ export default function Home() {
 
     function handleLogout() {
         authLogout();
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("insight_currentView");
+          localStorage.removeItem("insight_hasVisitedDashboard");
+          localStorage.removeItem("insight_user_profile");
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
         setCurrentView("landing");
         setHasVisitedDashboard(false);
     }

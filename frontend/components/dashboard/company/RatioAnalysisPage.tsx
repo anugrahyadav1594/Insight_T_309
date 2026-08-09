@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   BarChart, Bar, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis,
   PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { Percent, TrendingUp } from "lucide-react";
 import { getCompanyInfo } from "@/lib/companyData";
+import AiAnalysisButton from "./shared/AiAnalysisButton";
 
 import type { CompanyAnalysisResponse } from "@/lib/types";
 
@@ -70,7 +71,68 @@ function ViewTrendButton() {
   );
 }
 
+const CustomFloatingTooltip = ({ active, payload, label, unit }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0].payload;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0c1322]/95 p-4 text-xs shadow-2xl backdrop-blur-2xl space-y-2.5 min-w-[200px] z-50">
+      <div className="border-b border-white/10 pb-2 flex items-center justify-between">
+        <span className="font-bold text-slate-200">{label || data.year || data.subject}</span>
+        <span className="text-[10px] text-slate-500 font-mono">NSE</span>
+      </div>
+
+      <div className="space-y-1.5 font-mono text-xs">
+        {payload.map((item: any, idx: number) => {
+          const rawName = item.name || item.dataKey;
+          const displayName =
+            rawName === "revenue" ? "Revenue" :
+            rawName === "netProfit" ? "Net Profit" :
+            rawName === "grossMargin" ? "Gross Margin" :
+            rawName === "operatingMargin" ? "Operating Margin" :
+            rawName === "netMargin" ? "Net Margin" :
+            rawName === "value" ? "Score" : rawName;
+
+          const color =
+            rawName === "revenue" ? "#3b82f6" :
+            rawName === "netProfit" ? "#a855f7" :
+            item.color || item.fill || "#22d3ee";
+
+          const formattedVal = typeof item.value === "number"
+            ? (unit === "Cr" || rawName === "revenue" || rawName === "netProfit"
+                ? `₹${item.value.toLocaleString("en-IN")} Cr`
+                : unit === "Score" || rawName === "value"
+                ? `${item.value}/100`
+                : `${item.value.toFixed(1)}%`)
+            : item.value;
+
+          return (
+            <div key={idx} className="flex items-center justify-between gap-4">
+              <span className="flex items-center gap-1.5 font-medium" style={{ color }}>
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                {displayName}
+              </span>
+              <span className="font-bold text-white">{formattedVal}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export default function RatioAnalysisPage({ ticker, companyName }: Props) {
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const checkTheme = () => setIsLightMode(document.documentElement.classList.contains("light"));
+    checkTheme();
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   const companyInfo = useMemo(() => getCompanyInfo(ticker || "RELIANCE"), [ticker]);
 
   const roeVal = parseFloat(companyInfo.financials?.roe || "18");
@@ -78,44 +140,42 @@ export default function RatioAnalysisPage({ ticker, companyName }: Props) {
   const deVal = parseFloat(companyInfo.financials?.debtEquity || "0.2");
   const basePrice = companyInfo.price;
   const baseRev = Math.round(basePrice * 120);
-  const baseNet = Math.round(baseRev * 0.12);
 
   const chartData = useMemo(() => ({
     revenueNetProfit: [
-      { year: "FY22", revenue: Math.round(baseRev * 0.72), netProfit: Math.round(baseNet * 0.68) },
-      { year: "FY23", revenue: Math.round(baseRev * 0.81), netProfit: Math.round(baseNet * 0.79) },
-      { year: "FY24", revenue: Math.round(baseRev * 0.90), netProfit: Math.round(baseNet * 0.88) },
-      { year: "FY25", revenue: baseRev, netProfit: baseNet },
-      { year: "FY26", revenue: Math.round(baseRev * 1.12), netProfit: Math.round(baseNet * 1.15) },
+      { year: "FY21", revenue: Math.round(baseRev * 0.72), netProfit: Math.round(baseRev * 0.11) },
+      { year: "FY22", revenue: Math.round(baseRev * 0.81), netProfit: Math.round(baseRev * 0.13) },
+      { year: "FY23", revenue: Math.round(baseRev * 0.90), netProfit: Math.round(baseRev * 0.15) },
+      { year: "FY24", revenue: Math.round(baseRev * 0.96), netProfit: Math.round(baseRev * 0.16) },
+      { year: "FY25", revenue: baseRev, netProfit: Math.round(baseRev * (roeVal / 100)) },
     ],
     marginTrends: [
-      { year: "FY22", grossMargin: 31.0, operatingMargin: 13.5, netMargin: 8.0 },
-      { year: "FY23", grossMargin: 31.8, operatingMargin: 13.8, netMargin: 8.2 },
-      { year: "FY24", grossMargin: 32.5, operatingMargin: 14.2, netMargin: 8.4 },
-      { year: "FY25", grossMargin: 33.8, operatingMargin: 14.8, netMargin: 8.6 },
-      { year: "FY26", grossMargin: 34.2, operatingMargin: 15.2, netMargin: 8.9 },
+      { year: "FY21", grossMargin: 42.1, operatingMargin: 21.4, netMargin: 15.2 },
+      { year: "FY22", grossMargin: 44.5, operatingMargin: 23.1, netMargin: 16.8 },
+      { year: "FY23", grossMargin: 46.8, operatingMargin: 25.0, netMargin: 18.1 },
+      { year: "FY24", grossMargin: 48.2, operatingMargin: 26.4, netMargin: 19.5 },
+      { year: "FY25", grossMargin: 50.1, operatingMargin: 28.2, netMargin: Math.max(12, Math.min(25, roeVal)) },
     ],
     radarAxes: [
-      { subject: "ROE", value: Math.min(Math.round(roeVal * 2.5), 95), fullMark: 100 },
-      { subject: "Gross Margin", value: 65, fullMark: 100 },
-      { subject: "EBITDA", value: Math.min(Math.round(revGrowthVal * 3), 90), fullMark: 100 },
-      { subject: "Efficiency", value: 70, fullMark: 100 },
-      { subject: "Low Debt", value: Math.max(Math.round(100 - deVal * 60), 30), fullMark: 100 },
-      { subject: "Liquidity", value: 75, fullMark: 100 },
-      { subject: "Net Margin", value: 60, fullMark: 100 },
+      { subject: "Profitability", value: Math.min(95, Math.max(50, Math.round(roeVal * 4))) },
+      { subject: "Growth", value: Math.min(95, Math.max(45, Math.round(revGrowthVal * 4.5))) },
+      { subject: "Liquidity", value: 85 },
+      { subject: "Solvency", value: deVal < 0.5 ? 90 : 65 },
+      { subject: "Efficiency", value: 88 },
+      { subject: "Valuation", value: 72 },
     ],
-  }), [baseRev, baseNet, roeVal, revGrowthVal, deVal]);
+  }), [baseRev, roeVal, revGrowthVal, deVal]);
 
   const profitability: RatioItem[] = [
-    { id: "gm", title: "GROSS MARGIN", value: "33.80%", status: "Good" },
-    { id: "em", title: "EBITDA MARGIN", value: `${(revGrowthVal * 1.2).toFixed(2)}%`, status: "Good" },
-    { id: "nm", title: "NET MARGIN", value: "8.60%", status: "Fair" },
-    { id: "roe", title: "ROE", value: `${roeVal.toFixed(2)}%`, status: roeVal > 15 ? "Good" : "Fair" },
+    { id: "roe", title: "ROE", value: `${roeVal}%`, status: roeVal > 15 ? "Good" : "Fair" },
+    { id: "roce", title: "ROCE", value: `${(roeVal * 1.15).toFixed(1)}%`, status: roeVal > 12 ? "Good" : "Fair" },
+    { id: "opm", title: "OPERATING MARGIN", value: "28.2%", status: "Good" },
+    { id: "npm", title: "NET MARGIN", value: `${Math.max(12, Math.min(25, roeVal)).toFixed(1)}%`, status: "Good" },
   ];
 
   const liquidity: RatioItem[] = [
-    { id: "cr", title: "CURRENT RATIO", value: "1.35x", status: "Good" },
-    { id: "qr", title: "QUICK RATIO", value: "1.10x", status: "Good" },
+    { id: "cr", title: "CURRENT RATIO", value: "2.10", status: "Good" },
+    { id: "qr", title: "QUICK RATIO", value: "1.65", status: "Good" },
   ];
 
   const leverage: RatioItem[] = [
@@ -123,7 +183,9 @@ export default function RatioAnalysisPage({ ticker, companyName }: Props) {
     { id: "ic", title: "INTEREST COVER", value: "8.50x", status: "Good" },
   ];
 
-  const tt = { background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#fff", fontSize: "12px" } as React.CSSProperties;
+  const dotFill = isLightMode ? "#ffffff" : "#0a0e1a";
+  const tickFill = isLightMode ? "#475569" : "#94a3b8";
+  const gridStroke = isLightMode ? "rgba(148,163,184,0.2)" : "rgba(255,255,255,0.08)";
 
   return (
     <div className="space-y-8">
@@ -134,11 +196,10 @@ export default function RatioAnalysisPage({ ticker, companyName }: Props) {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData.revenueNetProfit} margin={{ top: 10, right: 10, bottom: 0, left: 0 }} barGap={4} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="year" tick={{ fill: "#64748b", fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                <Tooltip contentStyle={tt} labelStyle={{ color: "#94a3b8" }} cursor={{ fill: "rgba(255,255,255,0.03)", radius: 4 }}
-                  formatter={(value, name) => [`${Number(value).toLocaleString("en-IN")} Cr`, name === "revenue" ? "Revenue" : "Net Profit"]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+                <XAxis dataKey="year" tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: tickFill, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip content={<CustomFloatingTooltip unit="Cr" />} cursor={{ fill: "rgba(255,255,255,0.04)", radius: 6 }} isAnimationActive={true} animationDuration={150} animationEasing="ease-out" {...({ followPointer: true } as any)} />
                 <Legend wrapperStyle={{ fontSize: "12px", color: "#94a3b8", paddingTop: "16px" }}
                   formatter={(v) => v === "revenue" ? "Revenue" : "Net Profit"} iconType="square" />
                 <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
@@ -154,16 +215,15 @@ export default function RatioAnalysisPage({ ticker, companyName }: Props) {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData.marginTrends} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="year" tick={{ fill: "#64748b", fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
-                <Tooltip contentStyle={tt} labelStyle={{ color: "#94a3b8" }} cursor={{ stroke: "rgba(255,255,255,0.15)", strokeDasharray: "4 4" }}
-                  formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name === "grossMargin" ? "Gross Margin" : name === "operatingMargin" ? "Operating Margin" : "Net Margin"]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+                <XAxis dataKey="year" tick={{ fill: tickFill, fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: tickFill, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                <Tooltip content={<CustomFloatingTooltip unit="%" />} cursor={{ stroke: "rgba(34,211,238,0.3)", strokeDasharray: "4 4" }} isAnimationActive={true} animationDuration={150} animationEasing="ease-out" {...({ followPointer: true } as any)} />
                 <Legend wrapperStyle={{ fontSize: "12px", color: "#94a3b8", paddingTop: "16px" }}
                   formatter={(v) => v === "grossMargin" ? "Gross Margin" : v === "operatingMargin" ? "Operating Margin" : "Net Margin"} iconType="line" />
-                <Line type="monotone" dataKey="grossMargin" stroke="#34d399" strokeWidth={2} dot={{ r: 3, fill: "#34d399" }} activeDot={{ r: 5, stroke: "#34d399", strokeWidth: 2, fill: "#0a0e1a" }} />
-                <Line type="monotone" dataKey="operatingMargin" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3, fill: "#22d3ee" }} activeDot={{ r: 5, stroke: "#22d3ee", strokeWidth: 2, fill: "#0a0e1a" }} />
-                <Line type="monotone" dataKey="netMargin" stroke="#fbbf24" strokeWidth={2} dot={{ r: 3, fill: "#fbbf24" }} activeDot={{ r: 5, stroke: "#fbbf24", strokeWidth: 2, fill: "#0a0e1a" }} />
+                <Line type="monotone" dataKey="grossMargin" stroke="#34d399" strokeWidth={2} dot={{ r: 3, fill: "#34d399" }} activeDot={{ r: 5, stroke: "#34d399", strokeWidth: 2, fill: dotFill }} />
+                <Line type="monotone" dataKey="operatingMargin" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3, fill: "#22d3ee" }} activeDot={{ r: 5, stroke: "#22d3ee", strokeWidth: 2, fill: dotFill }} />
+                <Line type="monotone" dataKey="netMargin" stroke="#fbbf24" strokeWidth={2} dot={{ r: 3, fill: "#fbbf24" }} activeDot={{ r: 5, stroke: "#fbbf24", strokeWidth: 2, fill: dotFill }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -179,6 +239,7 @@ export default function RatioAnalysisPage({ ticker, companyName }: Props) {
               <PolarGrid stroke="rgba(255,255,255,0.06)" />
               <PolarAngleAxis dataKey="subject" tick={{ fill: "#94a3b8", fontSize: 11 }} />
               <PolarRadiusAxis tick={{ fill: "#475569", fontSize: 9 }} domain={[0, 100]} axisLine={false} />
+              <Tooltip content={<CustomFloatingTooltip unit="Score" />} isAnimationActive={true} animationDuration={150} animationEasing="ease-out" {...({ followPointer: true } as any)} />
               <Radar dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.15} strokeWidth={2} />
             </RadarChart>
           </ResponsiveContainer>
@@ -220,9 +281,7 @@ export default function RatioAnalysisPage({ ticker, companyName }: Props) {
         </div>
       </div>
 
-      <button className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-white/[0.08] bg-[#0a0e1a] px-6 py-4 text-sm font-medium text-slate-300 transition-all hover:border-white/[0.14] hover:text-white">
-        Get AI Ratio Analysis
-      </button>
+      <AiAnalysisButton ticker={ticker} companyName={companyName} label="Get AI Ratio Analysis" />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-export type RecommendationType = "Strong Buy" | "Buy" | "Hold" | "Avoid";
+export type RecommendationType = "Strong Bullish" | "Bullish" | "Neutral" | "Bearish" | "Strong Bearish";
 
 export interface ScreenerStock {
   symbol: string;
@@ -26,7 +26,7 @@ export const screenerStocks: ScreenerStock[] = [
     pe: 28,
     debtEquity: 0.05,
     aiScore: 94,
-    recommendation: "Strong Buy",
+    recommendation: "Strong Bullish",
   },
   {
     symbol: "INFY",
@@ -39,7 +39,7 @@ export const screenerStocks: ScreenerStock[] = [
     pe: 24,
     debtEquity: 0.08,
     aiScore: 88,
-    recommendation: "Buy",
+    recommendation: "Bullish",
   },
   {
     symbol: "HDFCBANK",
@@ -52,7 +52,7 @@ export const screenerStocks: ScreenerStock[] = [
     pe: 19,
     debtEquity: 0.12,
     aiScore: 91,
-    recommendation: "Strong Buy",
+    recommendation: "Strong Bullish",
   },
   {
     symbol: "RELIANCE",
@@ -65,7 +65,7 @@ export const screenerStocks: ScreenerStock[] = [
     pe: 26,
     debtEquity: 0.38,
     aiScore: 84,
-    recommendation: "Buy",
+    recommendation: "Bullish",
   },
   {
     symbol: "ICICIBANK",
@@ -78,7 +78,7 @@ export const screenerStocks: ScreenerStock[] = [
     pe: 18,
     debtEquity: 0.15,
     aiScore: 89,
-    recommendation: "Buy",
+    recommendation: "Bullish",
   },
   {
     symbol: "WIPRO",
@@ -91,7 +91,7 @@ export const screenerStocks: ScreenerStock[] = [
     pe: 21,
     debtEquity: 0.18,
     aiScore: 52,
-    recommendation: "Avoid",
+    recommendation: "Bearish",
   },
   {
     symbol: "SBIN",

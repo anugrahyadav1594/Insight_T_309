@@ -10,7 +10,9 @@ export interface WatchlistStock {
   aiScore: number;
 }
 
-export const watchlist: WatchlistStock[] = [
+export const watchlist: WatchlistStock[] = [];
+
+export const ALL_STOCK_DATABASE: WatchlistStock[] = [
   {
     symbol: "INFY",
     company: "Infosys Ltd",

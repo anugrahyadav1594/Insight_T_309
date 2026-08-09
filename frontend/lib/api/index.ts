@@ -33,4 +33,4 @@ export { getIpoCalendar } from "./ipos";
 
 export { getMovers } from "./movers";
 
-export { searchCompanies, getCompanyAnalysis } from "./companies";
+export { searchCompanies, getCompanyAnalysis, getCompanyNews } from "./companies";
