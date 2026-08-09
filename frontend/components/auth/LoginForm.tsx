@@ -13,9 +13,8 @@ const API_BASE =
 
 export default function LoginForm({ switchToRegister, onSuccess }: Props) {
     const handleGoogleSignIn = () => {
-        // Redirect to backend Google OAuth endpoint
-        const callbackUrl = `${window.location.origin}/auth/google/callback`;
-        window.location.href = `${API_BASE}/api/v1/auth/google/login?redirect_uri=${encodeURIComponent(callbackUrl)}`;
+        // Redirect to backend Google OAuth authorize endpoint
+        window.location.href = `${API_BASE}/api/v1/auth/google/authorize`;
     };
 
     return (
